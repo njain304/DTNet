@@ -7,6 +7,7 @@ Created on Wed Nov 21 13:56:21 2018
 """
 
 from datasets.simpsons import Simpsons
+from datasets.celebA import CelebA
 import data_utils
 
 import torch
@@ -29,4 +30,11 @@ simp_iter = iter(simp_loader)
 simp_img = simp_iter.next()
 print(simp_img.size())
 plt.imshow(np.transpose(simp_img.numpy()[0], (1, 2, 0)))
-plt.show()
+
+
+celebA_train_set = CelebA(transform = simp_transform)
+celebA_loader = torch.utils.data.DataLoader(celebA_train_set, batch_size=1, shuffle=True, num_workers=8)
+celebA_iter = iter(celebA_loader)
+celebA_img = celebA_iter.next()
+print(celebA_img.size())
+plt.imshow(np.transpose(celebA_img.numpy()[0], (1, 2, 0)))
