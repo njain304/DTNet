@@ -18,7 +18,7 @@ from torch.autograd import Variable
 
 class Emoji(Dataset):
 
-    def __init__(self, data_dir='/Users/neha/Desktop/Gatech/Fall 2018/Deep_Learning/Project/domain-transfer-net/datasets/emoji_data',
+    def __init__(self, data_dir='./data/emojis',
                          split='train',transform=None, target_transform=None):
         self.data_dir = data_dir
         self.split = split
@@ -31,7 +31,7 @@ class Emoji(Dataset):
         Args:
             index (int): Index
         """
-        img_name = os.path.join(self.data_dir, 'emoji_{}.png'.format(index))
+        img_name = os.path.join(self.data_dir, '{}.png'.format(index))
         print(img_name)
         img = Image.open(img_name)
         img = img.convert('RGB')
