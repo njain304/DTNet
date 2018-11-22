@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 21 13:05:26 2018
-Source of the data: https://www.kaggle.com/kostastokis/simpsons-faces#cropped.zip
+Created on Thu Nov 22 13:05:26 2018
+Source of the data: bitmoji/emoji_data.py
 
 
-@author: rishabhbhardwaj
+@author: nehaj1993
 """
 
 import os
