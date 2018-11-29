@@ -153,6 +153,7 @@ class DigitsTrainTest(BaseTest):
         s_data = s_data.cpu().data
         s_G = s_G.cpu().data
         unnormRange = UnNormalizeRangeTanh()
+        unnorm_ms = UnNormalizeRangeTanh()
         self.imshow(unnorm_ms(s_data[:16]),f_path)
         self.imshow(unnorm_emoji(s_G[:16]), f_path)
 

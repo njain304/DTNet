@@ -7,7 +7,7 @@ import numpy as np
 
 from digits_train import DigitsTrainTest
 
-digit_test = DigitsTrainTest(use_gpu = True)
+digit_test = DigitsTrainTest(use_gpu = False)
 
 try:
         torch._utils._rebuild_tensor_v2
