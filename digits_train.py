@@ -3,7 +3,7 @@ from base_test import BaseTest
 from models import digits
 import numpy as np
 import matplotlib.pyplot as plt
-import data
+import utils
 
 import torch
 import torchvision
@@ -13,8 +13,7 @@ import torch.nn as nn
 import torchvision.transforms as transforms
 import time
 import os
-from data import NormalizeRangeTanh, UnNormalizeRangeTanh
-from DTNet.datasets import celebA, simpsons
+from utils import NormalizeRangeTanh, UnNormalizeRangeTanh
 
 class DigitsTrainTest(BaseTest):
     def __init__(self, use_gpu=True):
