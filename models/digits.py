@@ -28,18 +28,18 @@ class F(nn.Module):
 	def __init__(self, input_channel, use_gpu=False):
 		super(F, self).__init__()
 		self.use_gpu = use_gpu
-		self.block = nn.Sequential(
+		self.classify = nn.Sequential(
                 nn.Conv2d(input_channel, 64, kernel_size=3, stride=2, padding=1),
-                #nn.ReLU(inplace=True),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.ReLU(inplace=True),
+                #nn.LeakyReLU(0.2, inplace=True),
 
                 nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
-                #nn.ReLU(inplace=True),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.ReLU(inplace=True),
+                #nn.LeakyReLU(0.2, inplace=True),
 
                 nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
-                #nn.ReLU(inplace=True),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.ReLU(inplace=True),
+                #nn.LeakyReLU(0.2, inplace=True),
 
                 nn.Conv2d(256, 128, kernel_size=4, stride=1, padding=0),
 #                 nn.ReLU(inplace=True),
@@ -54,7 +54,8 @@ class F(nn.Module):
 
 
 	def forward(self, input):
-		return self.block(input)
+		# TODO implement the forward pass
+		return self.classify(input)
 
 def conv_bn_lrelu(channels_in, channels_out, kernel, stride, padding, alpha, ReLU=True):
     block = nn.Sequential()
@@ -65,7 +66,55 @@ def conv_bn_lrelu(channels_in, channels_out, kernel, stride, padding, alpha, ReL
     return block
 
 class G(nn.Module):
-    def __init__(self, channels, use_gpu = True):
+	def __init__(self, channels):
+		super(self.__class__,self).__init__()
+		self.channels = channels
+		self.block = nn.Sequential(
+			# input channel will be 128
+			nn.ConvTranspose2d(128, 256, kernel_size=(4,4), stride=1, padding=0),
+			nn.ReLU(inplace=True),
+			nn.ConvTranspose2d(256, 128, kernel_size=(4,4), stride=2, padding=1),
+			nn.BatchNorm2d(128),
+			nn.ReLU(inplace=True),
+			nn.ConvTranspose2d(128, 64, kernel_size=(4,4), stride=2, padding=1),
+			nn.BatchNorm2d(64),
+			nn.ReLU(inplace=True),
+			nn.ConvTranspose2d(64, 1, kernel_size=(4,4),stride=2,padding=1),
+			nn.Tanh()
+			)
+	def forward(self,input):
+		output = self.block(input)
+		return output
+
+class D(nn.Module):
+	def __init__(self, channels,alpha=0.2):
+		super(self.__class__,self).__init__()
+		self.channels = channels
+		self.alpha = alpha
+		self.upblock = nn.Sequential(
+			nn.Conv2d(1, 64, kernel_size=(4,4), stride=2, padding=1),
+			nn.LeakyReLU(self.alpha, inplace=True),
+			nn.Conv2d(64, 128, kernel_size=(4,4), stride=2, padding=1),
+			nn.BatchNorm2d(128),
+			nn.LeakyReLU(self.alpha, inplace=True),
+			nn.Conv2d(128, 256, kernel_size=(4,4), stride=2, padding=1),
+			nn.BatchNorm2d(256)
+        )
+		self.downblock = nn.Sequential(
+			nn.LeakyReLU(self.alpha,inplace=True),
+			nn.Conv2d(256, 128,(4,4),1, 0),
+			nn.LeakyReLU(self.alpha,inplace=True),
+			nn.Conv2d(128,3,(1,1),1,0)
+        )
+	def forward(self, input):
+		output1 = self.upblock(input)
+		output = self.downblock(output1)
+		return output
+
+
+
+class new_G(nn.Module):
+    def __init__(self, channels, use_gpu = False):
         super(self.__class__,self).__init__()
         self.channels = channels
         self.use_gpu = use_gpu
@@ -87,23 +136,23 @@ class G(nn.Module):
         output = self.block(input)
         return output
 
-class D(nn.Module):
+class new_D(nn.Module):
 	def __init__(self, channels,alpha=0.2):
 		super(self.__class__,self).__init__()
 		self.channels = channels
 		self.alpha = alpha
 		self.block = nn.Sequential(
 			nn.Conv2d(1, 128, kernel_size=(3,3), stride=2,padding=1), # output:(batch_size, 128, 16, 16)
-			nn.BatchNorm2d(128),
-			nn.LeakyReLU(self.alpha,inplace=True),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(self.alpha,inplace=True),
 			nn.Conv2d(128, 256, kernel_size=(3,3), stride=2, padding=1), # output:(batch_size, 256, 8, 8)
-			nn.BatchNorm2d(256),
-			nn.LeakyReLU(self.alpha,inplace=True),
-			nn.Conv2d(256, 512, kernel_size=(3,3), stride=2, padding=1), # output:(batch_size, 512, 4, 4)
-			nn.BatchNorm2d(512),
-			nn.LeakyReLU(self.alpha,inplace=True),
-			nn.Conv2d(512, 3, kernel_size=(4,4), stride = 2) # output:(batch_size, 1, 1, 1)
-		)
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(self.alpha,inplace=True),
+            nn.Conv2d(256, 512, kernel_size=(3,3), stride=2, padding=1), # output:(batch_size, 512, 4, 4)
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(self.alpha,inplace=True),
+            nn.Conv2d(512, 3, kernel_size=(4,4), stride = 2) # output:(batch_size, 1, 1, 1)
+        )
 
 	def forward(self, input):
 		output = self.block(input)
