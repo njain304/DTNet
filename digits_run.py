@@ -1,10 +1,9 @@
+import torch
 import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
-
-from utils import ResizeTransform, SVHNDataset
 
 from digits_train import DigitsTrainTest
 

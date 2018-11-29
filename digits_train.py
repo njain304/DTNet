@@ -1,6 +1,6 @@
 import copy
 from base_test import BaseTest
-from models import digits
+from models import digits_model
 import numpy as np
 import matplotlib.pyplot as plt
 import utils
@@ -17,7 +17,7 @@ from utils import NormalizeRangeTanh, UnNormalizeRangeTanh
 
 class DigitsTrainTest(BaseTest):
     def __init__(self, use_gpu=True):
-        super(digits_model_test, self).__init__(use_gpu)
+        super(DigitsTrainTest, self).__init__(use_gpu)
         self.g_loss_function = None
         self.gan_loss_function = None
         self.d_loss_function = None
