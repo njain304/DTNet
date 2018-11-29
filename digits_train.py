@@ -1,6 +1,6 @@
 import copy
 from base_test import BaseTest
-from models import digits_model
+import digits_model
 import numpy as np
 import matplotlib.pyplot as plt
 import utils
@@ -15,7 +15,12 @@ import time
 import os
 from utils import NormalizeRangeTanh, UnNormalizeRangeTanh
 
+
 class DigitsTrainTest(BaseTest):
+    '''
+    Abstract class that outlines how a network test case should be defined.
+    '''
+
     def __init__(self, use_gpu=True):
         super(DigitsTrainTest, self).__init__(use_gpu)
         self.g_loss_function = None
@@ -35,11 +40,11 @@ class DigitsTrainTest(BaseTest):
         SVHN_transform = transforms.Compose([transforms.ToTensor(), NormalizeRangeTanh()])
         MNIST_transform =transforms.Compose([transforms.Scale(32),transforms.ToTensor(),NormalizeRangeTanh()])
 
-        s_train_set = torchvision.datasets.SVHN(root = './data/svhn/', split='extra',download = True, transform = SVHN_transform)
+        s_train_set = torchvision.datasets.SVHN(root = './data/svhn', split='extra',download = False, transform = SVHN_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
-        t_train_set = torchvision.datasets.MNIST(root='./data/mnist/', train=True, download = True, transform = MNIST_transform)
+        t_train_set = torchvision.datasets.MNIST(root='./data/mnist', train=True, download = False, transform = MNIST_transform)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
@@ -48,9 +53,13 @@ class DigitsTrainTest(BaseTest):
                                          shuffle=False, num_workers=8)
 
         t_test_set = torchvision.datasets.MNIST(root='./data/mnist/', train=False, download = True, transform = MNIST_transform)
-        self.t_test_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,shuffle=False, num_workers=8)
+        self.t_test_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,
+                                          shuffle=False, num_workers=8)
 
     def visualize_single_batch(self):
+        '''
+        Plots a minibatch as an example of what the data looks like.
+        '''
         # get some random training images
         dataiter_s = iter(self.s_train_loader)
         images_s, labels_s= dataiter_s.next()
@@ -65,7 +74,7 @@ class DigitsTrainTest(BaseTest):
 
     def create_model(self):
         '''
-        Model Creation
+        Constructs the model, converts to GPU if necessary. Saves for training.
         '''
         self.model = {}
         print('D')
@@ -78,17 +87,17 @@ class DigitsTrainTest(BaseTest):
         self.readClassifier('./pretrained_model/model_F_SVHN_NormRange.tar')
 
         #Test
-        model = torch.load('./pretrained_model/model_classifier_MNIST_NormRange.tar', map_location=lambda storage, loc: storage)
+        model = torch.load('./pretrained_model/model_classifier_MNIST_NormRange.tar')
         self.model['MNIST_classifier'] = model['best_model']
 
     def create_loss_function(self):
 
-        self.lossCE = nn.CrossEntropyLoss()#.cuda()
-        self.lossMSE = nn.MSELoss()#.cuda()
+        self.lossCE = nn.CrossEntropyLoss().cuda()
+        self.lossMSE = nn.MSELoss().cuda()
         label_0, label_1, label_2 = (torch.LongTensor(self.batch_size) for i in range(3))
-        label_0 = Variable(label_0)#.cuda())
-        label_1 = Variable(label_1)#.cuda())
-        label_2 = Variable(label_2)#.cuda())
+        label_0 = Variable(label_0.cuda())
+        label_1 = Variable(label_1.cuda())
+        label_2 = Variable(label_2.cuda())
         label_0.data.resize_(self.batch_size).fill_(0)
         label_1.data.resize_(self.batch_size).fill_(1)
         label_2.data.resize_(self.batch_size).fill_(2)
@@ -110,11 +119,12 @@ class DigitsTrainTest(BaseTest):
 
         d_lr = 1e-3
         d_reg = 1e-6
+        #self.d_optimizer = optim.Adam(self.model['D'].parameters(), lr=d_lr, weight_decay=d_reg) #TODO: change to SGD? (according to GAN hacks)
         self.d_optimizer = optim.Adam(self.model['D'].parameters(), lr=d_lr, weight_decay=d_reg)
 
     def readClassifier(self, model_name):
 
-        old_model = torch.load(model_name, map_location=lambda storage, loc: storage)['best_model']
+        old_model = torch.load(model_name)['best_model']
         old_dict = old_model.state_dict()
         new_model = digits_model.F(3,self.use_gpu)
         new_dict = new_model.state_dict()
@@ -152,26 +162,28 @@ class DigitsTrainTest(BaseTest):
     def seeResults(self, s_data, s_G, f_path):
         s_data = s_data.cpu().data
         s_G = s_G.cpu().data
+        # Unnormalize MNIST images
+        #unnorm_SVHN = data.UnNormalize((0.5,0.5,0.5), (0.5,0.5,0.5))
+        #unnorm_MNIST = data.UnNormalize((0.1307,), (0.3081,))
         unnormRange = UnNormalizeRangeTanh()
-        unnorm_ms = UnNormalizeRangeTanh()
-        self.imshow(unnorm_ms(s_data[:16]),f_path)
-        self.imshow(unnorm_emoji(s_G[:16]), f_path)
+        self.imshow(torchvision.utils.make_grid(unnormRange(s_data[:16]), nrow=4), f_path)
+        self.imshow(torchvision.utils.make_grid(unnormRange(s_G[:16]), nrow=4), f_path)
 
     def imshow(self, img, filepath):
-        plt.figure()
         npimg = img.numpy()
         npimg = np.transpose(npimg, (1, 2, 0))
         zero_array = np.zeros(npimg.shape)
         one_array = np.ones(npimg.shape)
         npimg = np.minimum(npimg,one_array)
         npimg = np.maximum(npimg,zero_array)
-
         plt.imsave(filepath, npimg)
 
     def create_discriminator_loss_function(self):
         '''
         Constructs the discriminator loss function.
         '''
+        # s - face domain
+        # t - emoji domain
         def DLoss(s_D_G,t_D_G,t_D):
 
             L_d = self.lossCE(s_D_G.squeeze(), self.label_0) + self.lossCE(t_D_G.squeeze(), self.label_1) + self.lossCE(t_D.squeeze(), self.label_2)
@@ -299,7 +311,6 @@ class DigitsTrainTest(BaseTest):
                 if total_batches % visualize_batches == 0:
 
                     f_path = './viz_out/'+str(epoch)+'_'+str(i)
-
                     s_F = self.model['F'](s_data)
                     s_G = self.model['G'](s_F)
                     self.seeResults(s_data, s_G, (f_path+'g'))
