@@ -33,19 +33,22 @@ class DigitsTrainTest(BaseTest):
 
     def create_loaders(self):
 
-        s_train_set = torchvision.datasets.SVHN(root = '.data/svhn/', split='extra',download = True, transform = SVHN_transform)
+        SVHN_transform = transforms.Compose([transforms.ToTensor(), NormalizeRangeTanh()])
+        MNIST_transform =transforms.Compose([transforms.Scale(32),transforms.ToTensor(),NormalizeRangeTanh()])
+
+        s_train_set = torchvision.datasets.SVHN(root = './data/svhn/', split='extra',download = True, transform = SVHN_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
-        t_train_set = torchvision.datasets.MNIST(root='.data/mnist/', train=True, download = True, transform = MNIST_transform)
+        t_train_set = torchvision.datasets.MNIST(root='./data/mnist/', train=True, download = True, transform = MNIST_transform)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
-        s_test_set = torchvision.datasets.SVHN(root = '.data/svhn/', split='test', download = True, transform = SVHN_transform)
+        s_test_set = torchvision.datasets.SVHN(root = './data/svhn/', split='test', download = True, transform = SVHN_transform)
         self.s_test_loader = torch.utils.data.DataLoader(s_test_set, batch_size=128,
                                          shuffle=False, num_workers=8)
 
-        t_test_set = torchvision.datasets.MNIST(root='.data/mnist/', train=False, download = True, transform = MNIST_transform)
+        t_test_set = torchvision.datasets.MNIST(root='./data/mnist/', train=False, download = True, transform = MNIST_transform)
         self.t_test_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,shuffle=False, num_workers=8)
 
     def visualize_single_batch(self):
