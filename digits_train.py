@@ -298,7 +298,7 @@ class DigitsTrainTest(BaseTest):
 
                 if total_batches % visualize_batches == 0:
 
-                    f_path = './viz_out/'+str(epoch)+'_'str(i)
+                    f_path = './viz_out/'+str(epoch)+'_'+str(i)
 
                     s_F = self.model['F'](s_data)
                     s_G = self.model['G'](s_F)

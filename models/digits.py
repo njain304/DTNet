@@ -65,7 +65,7 @@ def conv_bn_lrelu(channels_in, channels_out, kernel, stride, padding, alpha, ReL
     return block
 
 class G(nn.Module):
-	def __init__(self, channels, use_gpu = True):
+    def __init__(self, channels, use_gpu = True):
         super(self.__class__,self).__init__()
         self.channels = channels
         self.use_gpu = use_gpu
