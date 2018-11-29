@@ -365,7 +365,8 @@ class DigitsTrainTest(BaseTest):
             s_G = self.model['G'](s_F)
 
             if i == 0:
-                self.seeResults(s_data, s_G)
+                f_path = './viz_out/'+str(i)
+                self.seeResults(s_data, s_G, f_path)
 
             outputs = self.model['MNIST_classifier'](s_G)
             loss = self.lossCE(outputs, s_labels)
