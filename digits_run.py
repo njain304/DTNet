@@ -26,10 +26,10 @@ digit_test.create_loss_function()
 digit_test.create_optimizer()
 print('Starting training')
 kwargs = {}
-kwargs["visualize_batches"] = 50
-kwargs["save_batches"] = 50
-kwargs["test_batches"] = 50
-digit_test.train_model(num_epochs=600, **kwargs)
+kwargs["visualize_batches"] = 1000
+kwargs["save_batches"] = 1000
+kwargs["test_batches"] = 1000
+digit_test.train_model(num_epochs=2000, **kwargs)
 
-checkpoint_name = './log/fin_model.tar'
+checkpoint_name = './log/fin_model_2000.tar'
 torch.save(digit_test.log, checkpoint_name)

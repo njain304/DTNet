@@ -14,7 +14,7 @@ import torchvision.transforms as transforms
 import time
 import os
 from utils import NormalizeRangeTanh, UnNormalizeRangeTanh
-
+from datasets import limits
 
 class DigitsTrainTest(BaseTest):
     '''
@@ -40,11 +40,11 @@ class DigitsTrainTest(BaseTest):
         SVHN_transform = transforms.Compose([transforms.ToTensor(), NormalizeRangeTanh()])
         MNIST_transform =transforms.Compose([transforms.Scale(32),transforms.ToTensor(),NormalizeRangeTanh()])
 
-        s_train_set = torchvision.datasets.SVHN(root = './data/svhn', split='extra',download = False, transform = SVHN_transform)
+        s_train_set = limits.LimitDataset(torchvision.datasets.SVHN(root = './data/svhn', split='extra',download = False, transform = SVHN_transform), 10024)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
-        t_train_set = torchvision.datasets.MNIST(root='./data/mnist', train=True, download = False, transform = MNIST_transform)
+        t_train_set = limits.LimitDataset(torchvision.datasets.MNIST(root='./data/mnist', train=True, download = False, transform = MNIST_transform),10024)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
