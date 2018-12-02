@@ -42,13 +42,13 @@ class FaceTest(BaseTest):
         emoji_transform = transforms.Compose(
             [data.ResizeTransform(96), data.NormalizeRangeTanh()]) #transforms.Normalize((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))])
         
-        s_train_set = celebA.CelebA(data_dir = '/Users/gali/Downloads/dt/data/celebA/images/', annotations_dir='/Users/gali/Downloads/dt/data/celebA/annotations', split='train', transform =msface_transform)
+        s_train_set = celebA.CelebA(data_dir = './data/celebA/images/', annotations_dir='./data/celebA/annotations', split='train', transform =msface_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128, shuffle=True, num_workers=8)
         
-        t_train_set = simpsons.Simpsons(data_dir='/Users/gali/Downloads/dt/data/simpsons', split='train', transform = emoji_transform)
+        t_train_set = simpsons.Simpsons(data_dir='./data/simpsons', split='train', transform = emoji_transform)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128, shuffle=True, num_workers=8)
         
-        s_test_set = celebA.CelebA(data_dir = '/Users/gali/Downloads/dt/data/celebA/images/', annotations_dir='/Users/gali/Downloads/dt/data/celebA/annotations',split='test', transform = msface_transform)
+        s_test_set = celebA.CelebA(data_dir = './data/celebA/images/', annotations_dir='./data/celebA/annotations',split='test', transform = msface_transform)
         self.s_test_loader = torch.utils.data.DataLoader(s_test_set, batch_size=128, shuffle=False, num_workers=8)
 
     def visualize_single_batch(self):
