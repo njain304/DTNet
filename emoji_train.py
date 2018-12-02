@@ -15,14 +15,14 @@ import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn as nn
 import torchvision.transforms as transforms
-from DTNet.datasets import celebA, simpsons
+from DTNet.datasets import celebA, emoji
 
-class FaceTest(BaseTest):
+class EmojiTest(BaseTest):
     '''
     For training face image to emoji DTN.
     '''
     def __init__(self, use_gpu=True):
-        super(FaceTest, self).__init__(use_gpu)
+        super(EmojiTest, self).__init__(use_gpu)
         self.g_loss_function = None
         self.gan_loss_function = None
         self.d_loss_function = None
@@ -45,7 +45,7 @@ class FaceTest(BaseTest):
         s_train_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir='./data/celebA/annotations', split='train', transform =msface_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128, shuffle=True, num_workers=8)
 
-        t_train_set = simpsons.Simpsons(data_dir='./data/simpsons', split='train', transform = emoji_transform)
+        t_train_set = emoji.Emoji(data_dir='./data/emojis_1', split='train', transform = emoji_transform)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128, shuffle=True, num_workers =8)
 
         s_test_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir='./data/celebA/annotations',split='test', transform = msface_transform)
@@ -435,7 +435,7 @@ class FaceTest(BaseTest):
                 self.g_train_src_sum += 1
                 self.g_train_trg_runloss += l2_g.data[0]
                 self.g_train_trg_sum += 1
-
+                """
                 if l_d.data[0] > 1.4:
                     print('train D')
                     l_d.backward()
@@ -445,11 +445,12 @@ class FaceTest(BaseTest):
                     l_g.backward()
                     self.g_optimizer.step()
                 else:
-                    print('train BOTH')
-                    l_d.backward()
-                    self.d_optimizer.step()
-                    l_g.backward()
-                    self.g_optimizer.step()
+                """
+                print('train BOTH')
+                l_d.backward()
+                self.d_optimizer.step()
+                l_g.backward()
+                self.g_optimizer.step()
 
 
                 if i % visualize_batches == 0:
