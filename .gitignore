@@ -4,3 +4,5 @@ data
 results
 .DS_Store
 >>>>>>> 71665016dbafc41f0fef77cae43575b77a4cbbf1
+*.iml
+*.xml

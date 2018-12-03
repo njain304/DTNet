@@ -5,8 +5,6 @@ from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
 
-from data import ResizeTransform, SVHNDataset
-from DTNet.datasets import celebA
 
 from simpsons_train import FaceTest
 

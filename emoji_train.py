@@ -5,7 +5,7 @@ import faces_model
 import digits_model
 import numpy as np
 import matplotlib.pyplot as plt
-import data
+import data_utils as data
 from open_face_model import OpenFace
 from net_sphere import sphere20a
 
@@ -15,7 +15,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn as nn
 import torchvision.transforms as transforms
-from DTNet.datasets import celebA, emoji
+from datasets import celebA, emoji
 
 class EmojiTest(BaseTest):
     '''
