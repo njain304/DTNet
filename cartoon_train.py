@@ -1,8 +1,8 @@
 import copy
 import time
 from base_test import BaseTest
-import faces_model
-# import faces_model_v2
+import cartoon_model
+# import cartoon_model_v2
 import digits_model
 import numpy as np
 import matplotlib.pyplot as plt
@@ -95,8 +95,8 @@ class FaceTestSphere(BaseTest):
         Constructs the model, converts to GPU if necessary. Saves for training.
         '''
         self.model = {}
-        self.model['D']= faces_model.D(128, alpha=0.2)
-        self.model['G'] = faces_model.G(in_channels=512)
+        self.model['D']= cartoon_model.D(128, alpha=0.2)
+        self.model['G'] = cartoon_model.G(in_channels=512)
         if self.use_gpu:
             self.model['G'] = self.model['G'].cuda()
             self.model['D'] = self.model['D'].cuda()
