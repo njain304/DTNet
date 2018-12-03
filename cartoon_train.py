@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #import matplotlib
 #matplotlib.use('Agg')
 #import matplotlib.pyplot as plt
-import data_utils
+import data_utils as data
 from net_sphere import sphere20a
 
 import torch
