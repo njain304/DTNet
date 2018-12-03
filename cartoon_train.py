@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #import matplotlib
 #matplotlib.use('Agg')
 #import matplotlib.pyplot as plt
-import data
+import data_utils
 from net_sphere import sphere20a
 
 import torch
@@ -19,7 +19,7 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torchvision.transforms as transforms    
 from torch.optim.lr_scheduler import MultiStepLR
-from DTNet.datasets import celebA, cartoon
+from datasets import celebA, cartoon
         
 class FaceTestSphere(BaseTest):
     '''
