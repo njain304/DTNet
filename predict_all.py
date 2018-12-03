@@ -74,4 +74,70 @@ def predict_cartoon(image):
 	return result
 
 def predict_simpsons(image):
-	
+    print("called once")
+    f_model = OpenFace(True, 0)
+    f_model.load_state_dict(torch.load('./pretrained_model/openface.pth'))
+    f_model = f_model.eval()
+    model = torch.load('log/1543773462_318_63.tar')
+#     train_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir='./data/celebA/annotations', split='train', transform = transforms.Compose([ResizeTransform(96)]))
+#     train_loader = torch.utils.data.DataLoader(train_set, batch_size=1, shuffle=True) #TODO: why does shuffle give out of bounds indices?
+    msface_transform = transforms.Compose([data.ResizeTransform(96), data.NormalizeRangeTanh()])
+    image = msface_transform(image)
+    #plt.imshow(np.transpose(image, (1, 2, 0)))
+#     image = transforms.toTensor(transforms.toPIL(image))
+    image = image.unsqueeze(0)
+    # data_iter = iter(train_loader)
+    # img_tens = data_iter.next()
+#     img_tens = img_tens.cuda()
+    img_v = Variable(image.float().cuda(), requires_grad=False)
+    f, f_736 = f_model(img_v)
+    print(f.size(), f_736.size())
+    s_G = model['G_model'](torch.cat((f, f_736), dim=1))
+    up96 = nn.Upsample(size=(96,96), mode='bilinear')
+    s_G = up96(s_G)
+    s_G = s_G.cpu().data
+    unnorm_emoji = UnNormalizeRangeTanh()
+    res = unnorm_emoji(s_G[:16])
+    npimg = torchvision.utils.make_grid(res, nrow=4).numpy()
+    npimg = np.transpose(npimg, (1, 2, 0)) 
+    zero_array = np.zeros(npimg.shape)
+    one_array = np.ones(npimg.shape)
+    npimg = np.minimum(npimg,one_array)
+    npimg = np.maximum(npimg,zero_array)
+#     plt.imshow(npimg)
+    return npimg
+
+def predict_emoji(image):
+    print("emoji called once")
+    f_model = OpenFace(True, 0)
+    f_model.load_state_dict(torch.load('./pretrained_model/openface.pth'))
+    f_model = f_model.eval()
+    model = torch.load('log/1543773462_318_63.tar')
+#     train_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir='./data/celebA/annotations', split='train', transform = transforms.Compose([ResizeTransform(96)]))
+#     train_loader = torch.utils.data.DataLoader(train_set, batch_size=1, shuffle=True) #TODO: why does shuffle give out of bounds indices?
+    msface_transform = transforms.Compose([data.ResizeTransform(96), data.NormalizeRangeTanh()])
+    image = msface_transform(image)
+    #plt.imshow(np.transpose(image, (1, 2, 0)))
+#     image = transforms.toTensor(transforms.toPIL(image))
+    image = image.unsqueeze(0)
+    # data_iter = iter(train_loader)
+    # img_tens = data_iter.next()
+#     img_tens = img_tens.cuda()
+    img_v = Variable(image.float().cuda(), requires_grad=False)
+    f, f_736 = f_model(img_v)
+    print(f.size(), f_736.size())
+    s_G = model['G_model'](torch.cat((f, f_736), dim=1))
+    up96 = nn.Upsample(size=(96,96), mode='bilinear')
+    s_G = up96(s_G)
+    s_G = s_G.cpu().data
+    unnorm_emoji = UnNormalizeRangeTanh()
+    res = unnorm_emoji(s_G[:16])
+    npimg = torchvision.utils.make_grid(res, nrow=4).numpy()
+    npimg = np.transpose(npimg, (1, 2, 0)) 
+    zero_array = np.zeros(npimg.shape)
+    one_array = np.ones(npimg.shape)
+    npimg = np.minimum(npimg,one_array)
+    npimg = np.maximum(npimg,zero_array)
+#     plt.imshow(npimg)
+    return npimg
+
