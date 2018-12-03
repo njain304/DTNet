@@ -2,11 +2,14 @@ import copy
 import time
 from base_test import BaseTest
 import faces_model
+# import faces_model_v2
 import digits_model
 import numpy as np
 import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('Agg')
+#import matplotlib.pyplot as plt
 import data
-from open_face_model import OpenFace
 from net_sphere import sphere20a
 
 import torch
@@ -14,15 +17,16 @@ import torchvision
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn as nn
-import torchvision.transforms as transforms
-from DTNet.datasets import celebA, simpsons
+import torchvision.transforms as transforms    
+from torch.optim.lr_scheduler import MultiStepLR
+from DTNet.datasets import celebA, cartoon
         
-class FaceTest(BaseTest):
+class FaceTestSphere(BaseTest):
     '''
     For training face image to emoji DTN.
     '''
     def __init__(self, use_gpu=True):
-        super(FaceTest, self).__init__(use_gpu)
+        super(FaceTestSphere, self).__init__(use_gpu)
         self.g_loss_function = None
         self.gan_loss_function = None
         self.d_loss_function = None
@@ -42,13 +46,17 @@ class FaceTest(BaseTest):
         emoji_transform = transforms.Compose(
             [data.ResizeTransform(96), data.NormalizeRangeTanh()]) #transforms.Normalize((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))])
         
-        s_train_set = celebA.CelebA(data_dir = './data/celebA/images/', annotations_dir='./data/celebA/annotations', split='train', transform =msface_transform)
+        s_train_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir = './data/celebA/annotations', split='train', transform=msface_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128, shuffle=True, num_workers=8)
         
-        t_train_set = simpsons.Simpsons(data_dir='./data/simpsons', split='train', transform = emoji_transform)
+#         s_train_set = data.CelebADataset('./datasets/celeba/img_align_celeba/', './datasets/celeba/celeba_info', \
+#                                              'train', transform=msface_transform)
+#         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128, shuffle=True, num_workers=8)
+        
+        t_train_set = cartoon.Cartoon(data_dir = './data/cartoonset100k/images', split='train', transform=emoji_transform)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128, shuffle=True, num_workers=8)
         
-        s_test_set = celebA.CelebA(data_dir = './data/celebA/images/', annotations_dir='./data/celebA/annotations',split='test', transform = msface_transform)
+        s_test_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir = './data/celebA/annotations', split='test', transform=msface_transform)
         self.s_test_loader = torch.utils.data.DataLoader(s_test_set, batch_size=128, shuffle=False, num_workers=8)
 
     def visualize_single_batch(self):
@@ -88,16 +96,16 @@ class FaceTest(BaseTest):
         '''
         self.model = {}
         self.model['D']= faces_model.D(128, alpha=0.2)
-        self.model['G'] = faces_model.G(in_channels=864)
-        print "hi", self.use_gpu
+        self.model['G'] = faces_model.G(in_channels=512)
         if self.use_gpu:
-            self.model['G'] = self.model['G'].cuda()    
+            self.model['G'] = self.model['G'].cuda()
             self.model['D'] = self.model['D'].cuda()
             
-        self.prepare_openface('/Users/gali/Downloads/dt/pretrained_model/openface.pth', self.use_gpu)
-#         self.prepare_sphereface('./pretrained_model/sphere20a_20171020.pth', self.use_gpu)
+#         self.prepare_openface('./pretrained_model/openface.pth', self.use_gpu)
+        self.prepare_sphereface('./pretrained_model/sphere20a_20171020.pth', self.use_gpu)
         
         self.up96 = nn.Upsample(size=(96,96), mode='bilinear')
+        self.pad112 = data.ZeroPadBottom(112)
         
 #         self.model['F'].register_backward_hook(self.check_grad)
 
@@ -110,7 +118,6 @@ class FaceTest(BaseTest):
             
     def prepare_openface(self, pretrained_params_file, use_gpu=True):
         f_model = OpenFace(use_gpu)
-        # torch.load(pretrained_params_file, map_location=lambda storage, loc: storage) cpu only
         f_model.load_state_dict(torch.load(pretrained_params_file))
         
         # don't want to update params in pretrained model
@@ -149,25 +156,21 @@ class FaceTest(BaseTest):
         self.create_discriminator_loss_function()
         self.create_generator_loss_function()
         self.create_smoothing_loss_function()
-#         self.create_encoder_loss_function()
 
     def create_optimizer(self):
         '''
         Creates and saves the optimizer to use for training.
         '''
-        g_lr = 5e-4
-        g_reg = 0#1e-6
-        self.g_optimizer = optim.Adam(self.model['G'].parameters(), lr=g_lr, betas=(0.9, 0.999), weight_decay=g_reg)
+        g_lr = 2e-4
+        g_reg = 1e-6
+        self.g_optimizer = optim.Adam(self.model['G'].parameters(), lr=g_lr, betas=(0.5, 0.999), weight_decay=g_reg)
         
-        d_lr = 5e-4
-        d_reg = 0#1e-6
-        self.d_optimizer = optim.Adam(self.model['D'].parameters(), lr=d_lr, betas=(0.9, 0.999), weight_decay=d_reg)
-    
-    def test_model(self):
-        '''
-        Tests the model and returns the loss.
-        '''
-        pass
+        d_lr = 2e-4
+        d_reg = 1e-6
+        self.d_optimizer = optim.Adam(self.model['D'].parameters(), lr=d_lr, betas=(0.5, 0.999), weight_decay=d_reg)
+
+        self.g_lr_scheduler = MultiStepLR(self.g_optimizer, milestones=[15000], gamma=0.1)
+        self.d_lr_scheduler = MultiStepLR(self.d_optimizer, milestones=[15000], gamma=0.1)
         
     def validate(self, **kwargs):
         '''
@@ -192,24 +195,24 @@ class FaceTest(BaseTest):
         self.model['G'].train()
         return val_loss
    
-    def seeResultsSrc(self, s_data, s_G):     
+    def seeResultsSrc(self, s_data, s_G, f_path):     
         s_data = s_data.cpu().data
         s_G = s_G.cpu().data
                 
         # Unnormalize images
         unnorm_ms = data.UnNormalizeRangeTanh() #((0.5,0.5,0.5), (0.5,0.5,0.5))
         unnorm_emoji = data.UnNormalizeRangeTanh() #((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))
-        self.imshow(unnorm_ms(s_data[:16]))
-        self.imshow(unnorm_emoji(s_G[:16]))
+        self.imshow(unnorm_ms(s_data[:16]), f_path)
+        self.imshow(unnorm_emoji(s_G[:16]), f_path)
         
-    def seeResultsTgt(self, t_data, s_G):     
+    def seeResultsTgt(self, t_data, s_G, f_path):     
         t_data = t_data.cpu().data
         s_G = s_G.cpu().data
                 
         # Unnormalize images
         unnorm_emoji = data.UnNormalizeRangeTanh() #((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))
-        self.imshow(unnorm_emoji(t_data[:16]))
-        self.imshow(unnorm_emoji(s_G[:16]))
+        self.imshow(unnorm_emoji(t_data[:16]), f_path)
+        self.imshow(unnorm_emoji(s_G[:16]), f_path)
         
     def saveResultsSrc(self, s_data, s_G, filepath, resfilepath):     
         s_data = s_data.cpu().data
@@ -230,8 +233,8 @@ class FaceTest(BaseTest):
         self.imsave(unnorm_emoji(t_data[:16]), filepath)
         self.imsave(unnorm_emoji(s_G[:16]), resfilepath)
         
-    def imshow(self, img):
-        plt.figure()
+    def imshow(self, img, filepath):
+        #plt.figure()
         npimg = torchvision.utils.make_grid(img, nrow=4).numpy()
         npimg = np.transpose(npimg, (1, 2, 0)) 
         zero_array = np.zeros(npimg.shape)
@@ -239,17 +242,18 @@ class FaceTest(BaseTest):
         npimg = np.minimum(npimg,one_array)
         npimg = np.maximum(npimg,zero_array)
         
-        plt.imshow(npimg)
-        plt.show()
+        plt.imsave( filepath, npimg)
+        #plt.show()
         
     def imsave(self, img, filepath):
-        npimg = torchvision.utils.make_grid(img, nrow=4).numpy()
+        npimg = torchvision.utils.make_grid(img, nrow=4, normalize=False).numpy()
         npimg = np.transpose(npimg, (1, 2, 0)) 
         zero_array = np.zeros(npimg.shape)
         one_array = np.ones(npimg.shape)
         npimg = np.minimum(npimg,one_array)
         npimg = np.maximum(npimg,zero_array)
         plt.imsave(filepath, npimg)
+         
 
     def create_generator_loss_function(self):
         
@@ -257,7 +261,7 @@ class FaceTest(BaseTest):
             L_g = self.lossCE(s_D_G.squeeze(), self.label_2)
 #             MSEloss = nn.MSELoss()
 #             LConst = MSEloss(s_G_F, s_F.detach())
-            LConst = self.calc_similarity(s_F, s_G_F)
+            LConst = self.calc_similarity(s_F.detach(), s_G_F)
             LTV = self.g_smoothing_function(s_G)
 #             print(L_g)
 #             print(LConst)
@@ -271,6 +275,7 @@ class FaceTest(BaseTest):
            
             L_g = self.lossCE(t_D_G.squeeze(), self.label_2)
             LTID = self.distance_Tdomain(t_G, t.detach())
+#             LTID = self.calc_similarity(t_G, t)
             return L_g + LTID * 1.0 # Beta param
 
         self.g_train_trg_loss_function = g_train_trg_loss_function
@@ -290,8 +295,9 @@ class FaceTest(BaseTest):
 
         def d_train_trg_loss_function(t_D, t_D_G):
 
-            L_d = self.lossCE(t_D_G.squeeze(), self.label_1)+self.lossCE(t_D.squeeze(), self.label_2)
-            return L_d
+            L_d_g = self.lossCE(t_D_G.squeeze(), self.label_1)
+            L_d = self.lossCE(t_D.squeeze(), self.label_2)
+            return L_d, L_d_g
         
         self.d_train_trg_loss_function = d_train_trg_loss_function
         
@@ -309,13 +315,12 @@ class FaceTest(BaseTest):
             z_ijv2 = gen_ten[:, :, :-1, :-1]
 
             diff1 = z_ijp1 - z_ijv1
-            diff1 = torch.abs(diff1) 
+            diff1 = torch.abs(diff1)
             diff2 = z_ip1j - z_ijv2
             diff2 = torch.abs(diff2) 
-            
+         
             diff_sum = diff1 + diff2
 #             print(diff_sum)
-#             dist = torch.sqrt(diff_sum)
             per_chan_avg = torch.mean(diff_sum, dim=1)
             per_image_sum = torch.sum(torch.sum(per_chan_avg, dim=1), dim=1)
             loss = torch.mean(per_image_sum)
@@ -335,12 +340,20 @@ class FaceTest(BaseTest):
         
     def calc_similarity(self, s_G, s_G_F):
         # cosine sim
-#         AB_sum = torch.sum(s_G * s_G_F, dim=1)
-#         A_sum = torch.sqrt(torch.sum(s_G * s_G, dim=1))
-#         B_sum = torch.sqrt(torch.sum(s_G_F * s_G_F, dim=1))
-#         similarity = AB_sum / (A_sum * B_sum)
-#         avg_sim = torch.mean(similarity)
-#         return avg_sim
+        AB_sum = torch.sum(s_G * s_G_F, dim=1)
+        A_sum = torch.sqrt(torch.sum(s_G * s_G, dim=1))
+        B_sum = torch.sqrt(torch.sum(s_G_F * s_G_F, dim=1))
+        similarity = AB_sum / (A_sum * B_sum)
+        avg_sim = torch.mean(similarity)
+        # similarity is from [-1 1] where [opposite same]
+        # we want [0 2] where [same opposite]
+        cos_loss = -avg_sim + 1
+        
+#         #         # MSE
+#         distance = nn.MSELoss()
+#         mse_loss = distance(s_G.detach(), s_G_F)
+        
+        return cos_loss
 
 #         # euclidean dist
 #         diff = s_G - s_G_F
@@ -350,9 +363,7 @@ class FaceTest(BaseTest):
 #         avg = torch.mean(dist)
 #         return avg
 
-        # MSE
-        distance = nn.MSELoss()
-        return distance(s_G, s_G_F)
+
 
     def train_model(self, num_epochs, **kwargs):
         '''
@@ -373,25 +384,33 @@ class FaceTest(BaseTest):
         msimg_count = 0
 #         F_interval = 15
         total_batches = 0
-        
+        train_d = True
+
         for epoch in range(num_epochs):
             
             self.d_train_src_sum = 0
             self.g_train_src_sum = 0
             self.f_train_src_sum = 0
             self.d_train_trg_sum = 0
+            self.d_g_train_trg_sum = 0
             self.g_train_trg_sum = 0
             self.d_train_src_runloss = 0
             self.g_train_src_runloss = 0
             self.f_train_src_runloss = 0
             self.d_train_trg_runloss = 0
+            self.d_g_train_trg_runloss = 0
             self.g_train_trg_runloss = 0
             self.lconst_src_runloss = 0
            
             s_data_iter = iter(self.s_train_loader)
             t_data_iter = iter(self.t_train_loader)
             
-            for i in range(l):         
+            delay_interval = 30
+            delay_d_until = 30
+            
+            for i in range(l):
+                self.g_lr_scheduler.step()
+                self.d_lr_scheduler.step()
                 
                 msimg_count += 1               
                 if msimg_count >= len(self.s_train_loader):
@@ -418,66 +437,113 @@ class FaceTest(BaseTest):
 #                 if total_batches % F_interval == 0:
 #                     self.f_train_src(s_data)
 
-                l1_d = self.d_train_src(s_data)
-                l2_d = self.d_train_trg(t_data)
-                l_d = l1_d + l2_d
-                self.d_train_src_runloss += l1_d.data[0]
-                self.d_train_src_sum += 1
-                self.d_train_trg_runloss += l2_d.data[0]
-                self.d_train_trg_sum += 1 
-                      
-                l1_g, lconst_g = self.g_train_src(s_data)
-                l2_g = self.g_train_trg(t_data)
-                l_g = l1_g + l2_g                
-                self.g_train_src_runloss += l1_g.data[0]
-                self.lconst_src_runloss += lconst_g.data[0]
-                self.g_train_src_sum += 1  
-                self.g_train_trg_runloss += l2_g.data[0]
-                self.g_train_trg_sum += 1
-                
-                if l_d.data[0] > 1.4:
-                    print('train D')
-                    l_d.backward()
-                    self.d_optimizer.step() 
-                elif l_g.data[0] > 13:
-                    print('train G')
-                    l_g.backward()
-                    self.g_optimizer.step()
-                else:
-                    print('train BOTH')
-                    l_d.backward()
-                    self.d_optimizer.step()
-                    l_g.backward()
-                    self.g_optimizer.step()
+                if train_d:
+                    print('Train D...')
+                    l1_d = self.d_train_src(s_data)
+                    self.d_train_src_runloss += l1_d.data[0]
+                    self.d_train_src_sum += 1
+                    if (i > 0 or epoch > 0) and l1_d.data[0] > 0.0: #i % 2 == 0 and 
+                        l1_d.backward()
+                        self.d_optimizer.step()                    
 
-                
-                if i % visualize_batches == 0:
-                    # TODO: do we need to set these in eval mode?
-                    s_F, s_F736 = self.model['F'](s_data)
-                    s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
-                    # upscale
-                    s_G = self.up96(s_G) 
-                    self.seeResultsSrc(s_data, s_G)
+                    l2_d, l2_d_g = self.d_train_trg(t_data)
+                    self.d_train_trg_runloss += l2_d.data[0]
+                    self.d_train_trg_sum += 1 
+                    self.d_g_train_trg_runloss += l2_d_g.data[0]
+                    self.d_g_train_trg_sum += 1
+                    L_D = l2_d + l2_d_g
+                    if (i > 0 or epoch > 0) and l2_d.data[0] > 0.0: #i % 2 == 0 and 
+                        L_D.backward()
+                        self.d_optimizer.step()
+                    elif (i > 0 or epoch > 0) and l2_d_g.data[0] > 0.0:
+                        l2_d_g.backward()
+                        self.d_optimizer.step()
+                        
+                    l1_g, lconst_g = self.g_train_src(s_data)
+                    self.g_train_src_runloss += l1_g.data[0]
+                    self.lconst_src_runloss += lconst_g.data[0]
+                    self.g_train_src_sum += 1  
+                    l2_g = self.g_train_trg(t_data)
+                    self.g_train_trg_runloss += l2_g.data[0]
+                    self.g_train_trg_sum += 1
+                                            
+                    if l1_d.data[0] < 0.35: # or l2_d.data[0] < 0.2: # or l2_d_g.data[0] < 0.2:
+#                         print('D training delayed until batch ' + str(i+delay_interval))
+#                         delay_d_until = i + delay_interval
+                          train_d = False
+                        
+#                 if l2_d.data[0] > 0.0 and (i > 60 or epoch > 0):
+# #                     print('train D')
+#                     l2_d.backward()
+#                     self.d_optimizer.step()
+#                 if l2_d_g.data[0] > 0.0 and (i > 60 or epoch > 0):
+#                     self.model['D'].zero_grad()
+#                     l2_d_g.backward()
+#                     self.d_optimizer.step()
+               
+                if not train_d:
+                    print('Train G...')
+                    l1_g, lconst_g = self.g_train_src(s_data)
+                    #if i % 2 == 1:# or (i < 60 and epoch == 0): # try training almost all the time 47:
+    #                     print('train G')
+                    if (i > 0):
+                        l1_g.backward()
+                        self.g_optimizer.step()      
+                    self.g_train_src_runloss += l1_g.data[0]
+                    self.lconst_src_runloss += lconst_g.data[0]
+                    self.g_train_src_sum += 1  
+
+                    l2_g = self.g_train_trg(t_data)
+                    #if i % 2 == 1: # or (i < 60 and epoch == 0): # try training almost all the time 47:
+    #                     print('train G')
+                    if (i > 0):
+                        l2_g.backward()
+                        self.g_optimizer.step() 
+                    self.g_train_trg_runloss += l2_g.data[0]
+                    self.g_train_trg_sum += 1
                     
-                    s_F, s_F736 = self.model['F'](t_data)
-                    s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
+                    l1_d = self.d_train_src(s_data)
+                    self.d_train_src_runloss += l1_d.data[0]
+                    self.d_train_src_sum += 1             
+                    l2_d, l2_d_g = self.d_train_trg(t_data)
+                    self.d_train_trg_runloss += l2_d.data[0]
+                    self.d_train_trg_sum += 1 
+                    self.d_g_train_trg_runloss += l2_d_g.data[0]
+                    self.d_g_train_trg_sum += 1
+                      
+                    l1_d = self.d_train_src(s_data)           
+                    l2_d, l2_d_g = self.d_train_trg(t_data)
+                    if l1_d.data[0] > 1.0: # and l2_d.data[0] > 1.0: # or l2_d_g.data[0] > 1.5:
+#                         print('D training delayed until batch ' + str(i+delay_interval))
+#                         delay_d_until = i + delay_interval
+                          train_d = True
+    
+                if i % visualize_batches == 0:
+                    s_data_padded = self.pad112(s_data)
+                    s_F = self.model['F'](s_data_padded)
+                    s_G = self.model['G'](s_F)
+                    # upscale
+                    s_G = self.up96(s_G)
+		    f_path = './viz_out/'+str(i) 
+                    self.seeResultsSrc(s_data, s_G, (f_path+'src'))
+                    _, lconst_eval_loss = self.g_train_src(s_data)
+                    
+                    t_data_padded = self.pad112(t_data)
+                    s_F = self.model['F'](t_data_padded)
+                    s_G = self.model['G'](s_F)
                     # upscale
                     s_G = self.up96(s_G) 
-                    self.seeResultsTgt(t_data, s_G)
+                    self.seeResultsTgt(t_data, s_G, (f_path+'tgt'))
 
         
-                    d_src_loss = self.d_train_src_runloss / self.d_train_src_sum
-                    g_src_loss = self.g_train_src_runloss / self.g_train_src_sum
-                    lconst_src_loss = self.lconst_src_runloss / self.g_train_src_sum
-#                     if self.f_train_src_sum != 0:
-#                         f_src_loss = self.f_train_src_runloss / self.f_train_src_sum
-#                     else:
-#                         f_src_loss = 0
-                    d_trg_loss = self.d_train_trg_runloss / self.d_train_trg_sum
-                    g_trg_loss = self.g_train_trg_runloss / self.g_train_trg_sum
+                    d_src_loss = 0 if self.d_train_src_sum is 0 else self.d_train_src_runloss / self.d_train_src_sum
+                    g_src_loss = 0 if self.g_train_src_sum is 0 else self.g_train_src_runloss / self.g_train_src_sum
+                    lconst_src_loss = 0 if self.g_train_src_sum is 0 else self.lconst_src_runloss / self.g_train_src_sum
+                    d_trg_loss = 0 if self.d_train_trg_sum is 0 else self.d_train_trg_runloss / self.d_train_trg_sum
+                    d_g_trg_loss = 0 if self.d_g_train_trg_sum is 0 else self.d_g_train_trg_runloss / self.d_g_train_trg_sum
+                    g_trg_loss = 0 if self.g_train_trg_sum is 0 else self.g_train_trg_runloss / self.g_train_trg_sum
                     d_train_src_loss.append(d_src_loss)                    
                     g_train_src_loss.append(g_src_loss)
-#                     f_train_src_loss.append(f_src_loss)
                     lconst_train_src_loss.append(lconst_src_loss)
                     d_train_trg_loss.append(d_trg_loss)                    
                     g_train_trg_loss.append(g_trg_loss)
@@ -485,38 +551,44 @@ class FaceTest(BaseTest):
                     self.g_train_src_sum = 0
                     self.d_train_trg_sum = 0
                     self.g_train_trg_sum = 0
+                    self.d_g_train_trg_sum = 0
                     self.d_train_src_runloss = 0
                     self.g_train_src_runloss = 0
                     self.d_train_trg_runloss = 0
                     self.g_train_trg_runloss = 0
                     self.lconst_src_runloss = 0
+                    self.d_g_train_trg_runloss = 0
                         
                     import math
                     if math.isnan(g_src_loss):
                         self.model['G'].zero_grad()
-                        s_F, s_F736 = self.model['F'](s_data)
-                        s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
+                        s_data_padded = self.pad112(s_data)
+                        s_F = self.model['F'](s_data_padded)
+                        s_G = self.model['G'](s_F)
                         # upscale
                         s_G = self.up96(s_G)     
                         s_D_G = self.model['D'](s_G)
-                        s_G_F, _ = self.model['F'](s_G)
+                        s_G_padded = self.pad112(s_G)
+                        s_G_F = self.model['F'](s_G_padded)
                         print(s_F)
                         print(s_G)
                         print(s_D_G)
                         print(s_G_F)
 
                     print("Epoch %d  batches %d" %(epoch, i))
-                    print("d_src_loss: %f, g_src_loss %f, lconst_src_loss %f d_trg_loss %f, g_trg_loss %f" % (d_src_loss, g_src_loss, lconst_src_loss, d_trg_loss, g_trg_loss))
+                    print("d_src_loss: %f, d_g_trg_loss: %f, d_trg_loss: %f, g_src_loss: %f, g_trg_loss: %f, lconst_src_loss: %f lconst_eval_loss: %f" % (d_src_loss, d_g_trg_loss, d_trg_loss, g_src_loss, g_trg_loss, lconst_src_loss, lconst_eval_loss.data[0]))
                     
                 if total_batches % save_batches == 0:
-                    s_F, s_F736 = self.model['F'](s_data)
-                    s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
+                    s_data_padded = self.pad112(s_data)
+                    s_F = self.model['F'](s_data_padded)
+                    s_G = self.model['G'](s_F)
                     # upscale
                     s_G = self.up96(s_G) 
                     self.saveResultsSrc(s_data, s_G, './image_log/{}_src.png'.format(i), './image_log/{}_src_res.png'.format(i))
                     
-                    s_F, s_F736 = self.model['F'](t_data)
-                    s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
+                    t_data_padded = self.pad112(t_data)
+                    s_F = self.model['F'](t_data_padded)
+                    s_G = self.model['G'](s_F)
                     # upscale
                     s_G = self.up96(s_G) 
                     self.saveResultsTgt(t_data, s_G, './image_log/{}_tgt.png'.format(i), './image_log/{}_src_tgt.png'.format(i))
@@ -526,7 +598,6 @@ class FaceTest(BaseTest):
                     self.log['d_train_src_loss'] = d_train_src_loss                    
                     self.log['g_train_src_loss'] = g_train_src_loss
                     self.log['lconst_src_loss'] = lconst_train_src_loss
-#                     self.log['f_train_trg_loss'] = f_train_src_loss
                     self.log['d_train_trg_loss'] = d_train_trg_loss
                     self.log['g_train_trg_loss'] = g_train_trg_loss
                     checkpoint = './log/'+ str(int(time.time())) + '_' + str(epoch) + '_' + str(i) + '.tar'
@@ -535,11 +606,14 @@ class FaceTest(BaseTest):
 
     def d_train_src(self, s_data):
         self.model['D'].zero_grad()
-        s_F, s_F736 = self.model['F'](s_data)
-        s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
+        s_data_padded = self.pad112(s_data)
+        s_F = self.model['F'](s_data_padded)
+        s_G = self.model['G'](s_F)
         # upscale
         s_G = self.up96(s_G)
         s_D_G = self.model['D'](s_G)
+#         print('source gen discrim:')
+#         print(s_D_G[:10, :, 0, 0].squeeze())
         loss = self.d_train_src_loss_function(s_D_G)
         return loss
 #         loss.backward()
@@ -549,13 +623,27 @@ class FaceTest(BaseTest):
 
     def g_train_src(self, s_data):
         self.model['G'].zero_grad()
-        s_F, s_F736 = self.model['F'](s_data)
+        s_data_padded = self.pad112(s_data)
+#         print(s_data_padded.size())
+        s_F = self.model['F'](s_data_padded)
+       
+#         print('s-F:')
+#         print(s_F[:10,:])
+#         print(s_F.size())
 #         print(s_F)
-        s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
+        s_G = self.model['G'](s_F)
+#         print(s_G.size())
         # upscale
         s_G = self.up96(s_G) 
+#         print(s_G.size())
         s_D_G = self.model['D'](s_G)
-        s_G_F, _ = self.model['F'](s_G)
+#         print(s_D_G.size())
+        s_G_padded = self.pad112(s_G)
+#         print(s_G_padded.size())
+        s_G_F = self.model['F'](s_G_padded)
+#         print('s-G-F:')
+#         print(s_G_F[:10,:])
+#         print(s_G_F.size())
 #         print(s_G_F)
         loss, lconst_loss = self.g_train_src_loss_function(s_D_G, s_F, s_G_F, s_G)
         return loss, lconst_loss
@@ -568,14 +656,19 @@ class FaceTest(BaseTest):
 
     def d_train_trg(self, t_data):
         self.model['D'].zero_grad()
-        t_F, t_F736 = self.model['F'](t_data)
+        t_data_padded = self.pad112(t_data)
+        t_F = self.model['F'](t_data_padded)
         t_D = self.model['D'](t_data)
-        t_G = self.model['G'](torch.cat((t_F, t_F736), dim=1))
+        t_G = self.model['G'](t_F)
         # upscale
         t_G = self.up96(t_G)  
         t_D_G = self.model['D'](t_G)
-        loss = self.d_train_trg_loss_function(t_D, t_D_G)
-        return loss
+#         print('target gen discrim:')
+#         print(t_D_G[:10, :, 0, 0].squeeze())
+#         print('target discrim:')
+#         print(t_D[:10, :, 0, 0].squeeze())
+        loss_d, loss_d_g = self.d_train_trg_loss_function(t_D, t_D_G)
+        return loss_d, loss_d_g
 #         loss.backward()
 #         self.d_optimizer.step()
 #         self.d_train_trg_runloss += loss.data[0]
@@ -583,8 +676,9 @@ class FaceTest(BaseTest):
 
     def g_train_trg(self, t_data):
         self.model['G'].zero_grad()
-        t_F, t_F736 = self.model['F'](t_data)
-        t_G = self.model['G'](torch.cat((t_F, t_F736), dim=1))
+        t_data_padded = self.pad112(t_data)
+        t_F = self.model['F'](t_data_padded)
+        t_G = self.model['G'](t_F)
         # upscale
         t_G = self.up96(t_G)
         t_D_G = self.model['D'](t_G)

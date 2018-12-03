@@ -42,14 +42,14 @@ class FaceTest(BaseTest):
         emoji_transform = transforms.Compose(
             [data.ResizeTransform(96), data.NormalizeRangeTanh()]) #transforms.Normalize((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))])
         
-        s_train_set = celebA.CelebA(data_dir = './data/celebA/images/', annotations_dir='./data/celebA/annotations', split='train', transform =msface_transform)
+        s_train_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir='./data/celebA/annotations', split='train', transform =msface_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128, shuffle=True, num_workers=8)
         
         t_train_set = simpsons.Simpsons(data_dir='./data/simpsons', split='train', transform = emoji_transform)
-        self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128, shuffle=True, num_workers=8)
+        self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128, shuffle=True, num_workers =8)
         
-        s_test_set = celebA.CelebA(data_dir = './data/celebA/images/', annotations_dir='./data/celebA/annotations',split='test', transform = msface_transform)
-        self.s_test_loader = torch.utils.data.DataLoader(s_test_set, batch_size=128, shuffle=False, num_workers=8)
+        s_test_set = celebA.CelebA(data_dir = './data/celebA/images', annotations_dir='./data/celebA/annotations',split='test', transform = msface_transform)
+        self.s_test_loader = torch.utils.data.DataLoader(s_test_set, batch_size=128, shuffle=False, num_workers =8)
 
     def visualize_single_batch(self):
         '''
@@ -89,12 +89,11 @@ class FaceTest(BaseTest):
         self.model = {}
         self.model['D']= faces_model.D(128, alpha=0.2)
         self.model['G'] = faces_model.G(in_channels=864)
-        print "hi", self.use_gpu
         if self.use_gpu:
             self.model['G'] = self.model['G'].cuda()    
             self.model['D'] = self.model['D'].cuda()
             
-        self.prepare_openface('/Users/gali/Downloads/dt/pretrained_model/openface.pth', self.use_gpu)
+        self.prepare_openface('./pretrained_model/openface.pth', self.use_gpu)
 #         self.prepare_sphereface('./pretrained_model/sphere20a_20171020.pth', self.use_gpu)
         
         self.up96 = nn.Upsample(size=(96,96), mode='bilinear')
@@ -110,7 +109,6 @@ class FaceTest(BaseTest):
             
     def prepare_openface(self, pretrained_params_file, use_gpu=True):
         f_model = OpenFace(use_gpu)
-        # torch.load(pretrained_params_file, map_location=lambda storage, loc: storage) cpu only
         f_model.load_state_dict(torch.load(pretrained_params_file))
         
         # don't want to update params in pretrained model
@@ -128,7 +126,7 @@ class FaceTest(BaseTest):
         
         self.model['F'] = f_model
         if use_gpu:
-            self.model['F'] = self.model['F'].cuda()
+            self.model['F'] = sefl.model['F'].cuda()
         
         
     def create_loss_function(self):       
@@ -192,24 +190,24 @@ class FaceTest(BaseTest):
         self.model['G'].train()
         return val_loss
    
-    def seeResultsSrc(self, s_data, s_G):     
+    def seeResultsSrc(self, s_data, s_G, f_path):     
         s_data = s_data.cpu().data
         s_G = s_G.cpu().data
                 
         # Unnormalize images
         unnorm_ms = data.UnNormalizeRangeTanh() #((0.5,0.5,0.5), (0.5,0.5,0.5))
         unnorm_emoji = data.UnNormalizeRangeTanh() #((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))
-        self.imshow(unnorm_ms(s_data[:16]))
-        self.imshow(unnorm_emoji(s_G[:16]))
+        self.imshow(unnorm_ms(s_data[:16]),f_path)
+        self.imshow(unnorm_emoji(s_G[:16]), f_path)
         
-    def seeResultsTgt(self, t_data, s_G):     
+    def seeResultsTgt(self, t_data, s_G, f_path):     
         t_data = t_data.cpu().data
         s_G = s_G.cpu().data
                 
         # Unnormalize images
         unnorm_emoji = data.UnNormalizeRangeTanh() #((0.2411, 0.1801, 0.1247), (0.3312, 0.2672, 0.2127))
-        self.imshow(unnorm_emoji(t_data[:16]))
-        self.imshow(unnorm_emoji(s_G[:16]))
+        self.imshow(unnorm_emoji(t_data[:16]), f_path)
+        self.imshow(unnorm_emoji(s_G[:16]), f_path)
         
     def saveResultsSrc(self, s_data, s_G, filepath, resfilepath):     
         s_data = s_data.cpu().data
@@ -230,8 +228,8 @@ class FaceTest(BaseTest):
         self.imsave(unnorm_emoji(t_data[:16]), filepath)
         self.imsave(unnorm_emoji(s_G[:16]), resfilepath)
         
-    def imshow(self, img):
-        plt.figure()
+    def imshow(self, img, filepath):
+        #plt.figure()
         npimg = torchvision.utils.make_grid(img, nrow=4).numpy()
         npimg = np.transpose(npimg, (1, 2, 0)) 
         zero_array = np.zeros(npimg.shape)
@@ -239,8 +237,9 @@ class FaceTest(BaseTest):
         npimg = np.minimum(npimg,one_array)
         npimg = np.maximum(npimg,zero_array)
         
-        plt.imshow(npimg)
-        plt.show()
+        plt.imsave(filepath, npimg)
+        #plt.imshow(npimg)
+        #plt.show()
         
     def imsave(self, img, filepath):
         npimg = torchvision.utils.make_grid(img, nrow=4).numpy()
@@ -375,6 +374,7 @@ class FaceTest(BaseTest):
         total_batches = 0
         
         for epoch in range(num_epochs):
+            print("starting epoch:", epoch)
             
             self.d_train_src_sum = 0
             self.g_train_src_sum = 0
@@ -402,6 +402,7 @@ class FaceTest(BaseTest):
                 t_data = t_data_iter.next()
                 
                 # check terminal state in dataloader(iterator)
+#                print(self.batch_size, s_data.size(0), t_data.size(0))
                 if self.batch_size != s_data.size(0) or self.batch_size != t_data.size(0): continue
                 total_batches += 1
                
@@ -435,20 +436,20 @@ class FaceTest(BaseTest):
                 self.g_train_trg_runloss += l2_g.data[0]
                 self.g_train_trg_sum += 1
                 
-                if l_d.data[0] > 1.4:
-                    print('train D')
-                    l_d.backward()
-                    self.d_optimizer.step() 
-                elif l_g.data[0] > 13:
-                    print('train G')
-                    l_g.backward()
-                    self.g_optimizer.step()
-                else:
-                    print('train BOTH')
-                    l_d.backward()
-                    self.d_optimizer.step()
-                    l_g.backward()
-                    self.g_optimizer.step()
+#                if l_d.data[0] > 1.4:
+#                    print('train D')
+#                    l_d.backward()
+#                    self.d_optimizer.step() 
+#                elif l_g.data[0] > 13:
+#                    print('train G')
+#                    l_g.backward()
+#                    self.g_optimizer.step()
+#                else:
+                print('train BOTH')
+                l_d.backward()
+                self.d_optimizer.step()
+                l_g.backward()
+                self.g_optimizer.step()
 
                 
                 if i % visualize_batches == 0:
@@ -456,14 +457,15 @@ class FaceTest(BaseTest):
                     s_F, s_F736 = self.model['F'](s_data)
                     s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
                     # upscale
-                    s_G = self.up96(s_G) 
-                    self.seeResultsSrc(s_data, s_G)
+                    s_G = self.up96(s_G)
+                    f_path = './viz_out/'+str(epoch)+'_'+str(i)
+                    self.seeResultsSrc(s_data, s_G, (f_path+'src'))
                     
                     s_F, s_F736 = self.model['F'](t_data)
                     s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
                     # upscale
                     s_G = self.up96(s_G) 
-                    self.seeResultsTgt(t_data, s_G)
+                    self.seeResultsTgt(t_data, s_G, (f_path+'tgt'))
 
         
                     d_src_loss = self.d_train_src_runloss / self.d_train_src_sum
@@ -509,6 +511,7 @@ class FaceTest(BaseTest):
                     print("d_src_loss: %f, g_src_loss %f, lconst_src_loss %f d_trg_loss %f, g_trg_loss %f" % (d_src_loss, g_src_loss, lconst_src_loss, d_trg_loss, g_trg_loss))
                     
                 if total_batches % save_batches == 0:
+                    print("saving")
                     s_F, s_F736 = self.model['F'](s_data)
                     s_G = self.model['G'](torch.cat((s_F, s_F736), dim=1))
                     # upscale
@@ -531,6 +534,7 @@ class FaceTest(BaseTest):
                     self.log['g_train_trg_loss'] = g_train_trg_loss
                     checkpoint = './log/'+ str(int(time.time())) + '_' + str(epoch) + '_' + str(i) + '.tar'
                     torch.save(self.log, checkpoint)
+            print("ending epoch:", epoch)
         
 
     def d_train_src(self, s_data):
