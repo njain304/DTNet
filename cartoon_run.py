@@ -8,7 +8,7 @@ import numpy as np
 from data import ResizeTransform, SVHNDataset
 from DTNet.datasets import celebA
 
-from faces_model_test_sphere import FaceTestSphere
+from cartoon_train import FaceTestSphere
 
 digit_test = FaceTestSphere(use_gpu = True)
 
