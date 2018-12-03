@@ -28,13 +28,14 @@ class CelebA(Dataset):
         split_data = []
         with open(os.path.join(annotations_dir, 'list_eval_partition.csv')) as split_file:
             reader = csv.reader(split_file, delimiter=',')
+            test_row = next(reader)
             for row in reader:
                 split_data.append(row)
         bbox_data = []
         with open(os.path.join(annotations_dir, 'list_bbox_celeba.csv')) as bbox_file:
             reader = csv.reader(bbox_file, delimiter=',', skipinitialspace=True)
             test_row = next(reader) # header row
-            test_row = next(reader) # header row
+#            test_row = next(reader) # header row
             for row in reader:
                 bbox_data.append(row)
                 
