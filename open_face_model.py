@@ -13,7 +13,6 @@ except:
 import os
 import time
 
-from data import CelebADataset, MSCeleb1MDataset, ResizeTransform
 
 import pathlib
 
@@ -155,14 +154,14 @@ class OpenFace(nn.Module):
         self.layer2 = BatchNorm(64)
         self.layer3 = nn.ReLU()
         self.layer4 = nn.MaxPool2d((3,3), stride=(2,2), padding=(1,1))
-        self.layer5 = CrossMapLRN(5, 0.0001, 0.75)#gpuDevice=gpuDevice)
+        self.layer5 = CrossMapLRN(5, 0.0001, 0.75, gpuDevice=gpuDevice)
         self.layer6 = Conv2d(64, 64, (1,1), (1,1), (0,0))
         self.layer7 = BatchNorm(64)
         self.layer8 = nn.ReLU()
         self.layer9 = Conv2d(64, 192, (3,3), (1,1), (1,1))
         self.layer10 = BatchNorm(192)
         self.layer11 = nn.ReLU()
-        self.layer12 = CrossMapLRN(5, 0.0001, 0.75)#, gpuDevice=gpuDevice)
+        self.layer12 = CrossMapLRN(5, 0.0001, 0.75, gpuDevice=gpuDevice)
         self.layer13 = nn.MaxPool2d((3,3), stride=(2,2), padding=(1,1))
         self.layer14 = Inception(192, (3,5), (1,1), (128,32), (96,16,32,64), nn.MaxPool2d((3,3), stride=(2,2), padding=(0,0)), True)
         self.layer15 = Inception(256, (3,5), (1,1), (128,64), (96,32,64,64), nn.LPPool2d(2, (3,3), stride=(3,3)), True)
@@ -219,103 +218,9 @@ class OpenFace(nn.Module):
 def prepareOpenFace(useCuda=True, gpuDevice=0, useMultiGPU=False):
     containing_dir = str(pathlib.Path(__file__).resolve().parent)
     model = OpenFace(useCuda, gpuDevice)
-    model.load_state_dict(torch.load('/Users/gali/Downloads/dt/pretrained_model/openface.pth',map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load('./pretrained_model/openface.pth'))
 
     if useMultiGPU:
         model = nn.DataParallel(model)
 
     return model
-
-#
-if __name__ == '__main__':
-    #
-    useCuda = True
-    if useCuda:
-        assert torch.cuda.is_available()
-    else:
-        assert False, 'Sorry, .pth file contains CUDA version of the network only.'
-
-    nof = prepareOpenFace()
-    nof = nof.Ω()
-    
-#     train_set = CelebADataset('./datasets/celeba/img_align_celeba/', '/home/drempe/domain-transfer-net/datasets/celeba/celeba_info/', 'eval', ResizeTransform(96))
-#     train_loader = torch.utils.data.DataLoader(train_set, batch_size=1, shuffle=True) #TODO: why does shuffle give out of bounds indices?
-    
-    train_set = MSCeleb1MDataset('./datasets/ms-celeb-1m/data/', 'train', ResizeTransform(96))
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=1, shuffle=True) #TODO: why does shuffle give out of bounds indices?
-    
-    data_iter = iter(train_loader)
-    
-    img_tens = data_iter.next()
-    img_tens = img_tens.cuda()
-    
-    img_v = Variable(img_tens, requires_grad=False)
-    
-    f, f_736 = nof(img_v)
-    
-    img_tens2 = data_iter.next()
-    img_tens2 = img_tens2.cuda()
-    img2_v = Variable(img_tens2, requires_grad=False)
-    f2, f2_736 = nof(img2_v)
-    
-    print(f)
-    print(f2)
-    
-
-
-#     # test
-#     #
-#     I = numpy.reshape(numpy.array(range(96 * 96), dtype=numpy.float32) * 0.01, (1,96,96))
-#     I = numpy.concatenate([I, I, I], axis=0)
-#     I_ = torch.from_numpy(I).unsqueeze(0)
-
-#     if useCuda:
-#         I_ = I_.cuda()
-
-#     print(nof)
-#     I_ = Variable(I_)
-#     print(nof(I_))
-    
-    
-
-
-
-#     #
-#     import cv2
-
-#     def ReadImage(pathname):
-#         img = cv2.imread(pathname)
-#         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-#         img = cv2.resize(img, (96, 96), interpolation=cv2.INTER_LINEAR)
-#         img = numpy.transpose(img, (2, 0, 1))
-#         img = img.astype(numpy.float32) / 255.0
-#         print(numpy.min(img), numpy.max(img))
-#         print(numpy.sum(img[0]), numpy.sum(img[1]), numpy.sum(img[2]))
-#         I_ = torch.from_numpy(img).unsqueeze(0)
-#         if useCuda:
-#             I_ = I_.cuda()
-#         return I_
-
-#     img_paths = [	\
-#         '/home/drempe/domain-transfer-net/datasets/celeba/img_align_celeba/202561.jpg',	\
-#         '/home/drempe/domain-transfer-net/datasets/celeba/img_align_celeba/102561.jpg',	\
-#         '/home/drempe/domain-transfer-net/datasets/celeba/img_align_celeba/002561.jpg',	\
-#         '/home/drempe/domain-transfer-net/datasets/celeba/img_align_celeba/000561.jpg',	\
-#     ]
-#     imgs = []
-#     for img_path in img_paths:
-#         imgs.append(ReadImage(img_path))
-
-#     I_ = torch.cat(imgs, 0)
-#     I_ = Variable(I_, requires_grad=False)
-#     start = time.time()
-#     f, f_736 = nof(I_)
-#     print("  + Forward pass took {} seconds.".format(time.time() - start))
-#     print(f)
-#     for i in range(f_736.size(0) - 1):
-#         for j in range(i + 1, f_736.size(0)):
-#             df = f_736[i] - f_736[j]
-#             print(img_paths[i].split('/')[-1], img_paths[j].split('/')[-1], torch.dot(df, df))
-
-    # in OpenFace's sample code, cosine distance is usually used for f (128d).
-    
