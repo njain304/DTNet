@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 from io import BytesIO as _BytesIO
+from io import StringIO
 from PIL import Image
 
 import digits_server
@@ -38,6 +39,15 @@ def pil_to_b64(im, enc_format='png', verbose=False, **kwargs):
     return encoded
 
 
+def b64_to_pil(string):
+    string += "=" * ((4 - len(string) % 4) % 4)
+    decoded = base64.b64decode(string)
+    buffer = _BytesIO(decoded)
+    buffer.seek(0)
+    im = Image.open(buffer)
+
+    return im
+
 def numpy_to_b64(np_array, enc_format='png', scalar=True, **kwargs):
     """
     Converts a numpy image into base 64 string for HTML displaying
@@ -59,15 +69,15 @@ def numpy_to_b64(np_array, enc_format='png', scalar=True, **kwargs):
 # Sample Data Collection Start
 digits_display_images = [{'label': str(i)+'.png', 'value': str(i)} for i in xrange(1, 50)]
 
-sample_digit_img_path = './results/digits/outputs/1.png'
-sample_digit_img = Image.open(sample_digit_img_path)
-sample_digit_encoded_img = pil_to_b64(sample_digit_img)
+sample_digits_display = [21, 333, 467, 20, 70, 557, 52, 324, 677,101, 320, 98, 302, 259]
+sample_digits_imgs = [Image.open('./results/digits/outputs/'+str(i)+'.png') for i in sample_digits_display]
+sample_digits_encoded = [pil_to_b64(i) for i in sample_digits_imgs]
 
 # Sample Data Collection End
 
 app.layout = html.Div([
     html.H1(
-            children = 'Study on Domain Trasnfer Networks',
+            children = 'Unsupervised Cross-Domain Image Generation using GANs',
             style = {
                     'textAlign': 'center'
             }
@@ -80,41 +90,6 @@ app.layout = html.Div([
     ),
     html.Div([
         dcc.Tabs(id="tabs", children=[
-            dcc.Tab(label='Tab one', children=[
-                html.Div(children=[
-                        html.Div(children=[
-                                html.H3('Tab content 1'),
-                                dcc.Upload(
-                                    id='upload-image',
-                                    children=[
-                                        'Drag and Drop or ',
-                                        html.A('Select an Image')
-                                    ],
-                                    style={
-                                        'width': '100%',
-                                        'height': '50px',
-                                        'lineHeight': '50px',
-                                        'borderWidth': '1px',
-                                        'borderStyle': 'dashed',
-                                        'borderRadius': '5px',
-                                        'textAlign': 'center'
-                                    },
-                                    accept='image/*'
-                                ),
-                                html.Div(id ='result-tab-1'),
-                                dcc.Graph(
-                                    id='graph-1-tabs',
-                                    figure={
-                                        'data': [{
-                                            'x': [1, 2, 3],
-                                            'y': [3, 1, 2],
-                                            'type': 'bar'
-                                        }]
-                                    }
-                                )
-                        ])
-                ]),
-            ]),
             dcc.Tab(label='Digits Transfer', children=[
                     html.H4('SVHN (Source) -> MNIST (Target)',
                             style = {
@@ -132,35 +107,205 @@ app.layout = html.Div([
                     html.H6('Sample Generated Images (SVHN generated in MNIST domain)'),
                     html.Div(id='digits-sample-container', children=[
                             html.Img(
-                                src=HTML_IMG_SRC_PARAMETERS + sample_digit_encoded_img,
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[0],
                                 width='200px'
                             ),
                             html.Img(
-                                src=HTML_IMG_SRC_PARAMETERS + sample_digit_encoded_img,
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[1],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[2],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[3],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[4],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[5],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[6],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[7],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[8],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[9],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[10],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[11],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[12],
+                                width='200px'
+                            ),
+                            html.Img(
+                                src=HTML_IMG_SRC_PARAMETERS + sample_digits_encoded[13],
                                 width='200px'
                             )
                     ]),
-                    html.H6('Try out on SVHN Test Dataset...'),
-                    html.P('Select test image from dropdown:-'),
+                    html.H6('Try out on SVHN Test Dataset...',
+                            style = {
+                                'textAlign':'center'
+                            }
+                    ),
+                    html.P('Select test image from dropdown:-',
+                            style = {
+                                'textAlign':'center'
+                            }
+                    ),
                     dcc.Dropdown(
                         id='digits-dropdown',
                         options=digits_display_images,
-                        value='1'
-                    ),
-                    html.Div(id='digits-result')
-            ]),
-            dcc.Tab(label='Tab three', children=[
-                    dcc.Graph(
-                        id='example-graph-2',
-                        figure={
-                            'data': [
-                                {'x': [1, 2, 3], 'y': [2, 4, 3],
-                                    'type': 'bar', 'name': 'SF'},
-                                {'x': [1, 2, 3], 'y': [5, 4, 3],
-                                 'type': 'bar', 'name': u'Montral'},
-                            ]
+                        value='20',
+                        style = {
+                            'textAlign':'center',
+                            'width':'45%',
+                            'margin-left':'28%'
                         }
-                    )
+                    ),
+                    html.Hr(),
+                    html.P('Gnereated image in MNIST domain for selected SVHN image..',
+                            style = {
+                                'textAlign':'center'
+                            }
+                    ),
+                    html.Div(id='digits-result',
+                        style = {
+                            'textAlign':'center',
+                        }
+                    ),
+                    html.Hr()
+            ]),
+            dcc.Tab(label='Face To Emoji', children=[
+                html.Div(children=[
+                        html.Div(children=[
+                                html.H4('CelebA (Source) -> Emoji (Target)',
+                                        style = {
+                                            'textAlign': 'center'
+                                        }
+                                    ),
+                                html.P('For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
+                                html.P('We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
+                                html.H6('Sample Generated Images (Faces generated in Emoji domain)',
+                                            style = {
+                                                'textAlign': 'center'
+                                            }
+                                ),
+                                dcc.Upload(
+                                    id='upload-image',
+                                    children=[
+                                        'Drag and Drop or ',
+                                        html.A('Select an Image')
+                                    ],
+                                    style={
+                                        'width': '28%',
+                                        'height': '50px',
+                                        'lineHeight': '50px',
+                                        'borderWidth': '1px',
+                                        'borderStyle': 'dashed',
+                                        'borderRadius': '5px',
+                                        'textAlign': 'center',
+                                        'margin-left': '35%'
+                                    },
+                                    accept='image/*'
+                                ),
+                                html.Div(id ='result-tab-1')
+                        ])
+                ]),
+            ]),
+            dcc.Tab(label='Face To Cartoons', children=[
+                html.Div(children=[
+                        html.Div(children=[
+                                html.H4('CelebA (Source) -> CartoonSet (Target)',
+                                        style = {
+                                            'textAlign': 'center'
+                                        }
+                                    ),
+                                html.P('For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
+                                html.P('We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
+                                html.H6('Sample Generated Images (Faces generated in Emoji domain)',
+                                            style = {
+                                                'textAlign': 'center'
+                                            }
+                                ),
+                                dcc.Upload(
+                                    id='upload-image-cartoon',
+                                    children=[
+                                        'Drag and Drop or ',
+                                        html.A('Select an Image')
+                                    ],
+                                    style={
+                                        'width': '28%',
+                                        'height': '50px',
+                                        'lineHeight': '50px',
+                                        'borderWidth': '1px',
+                                        'borderStyle': 'dashed',
+                                        'borderRadius': '5px',
+                                        'textAlign': 'center',
+                                        'margin-left': '35%'
+                                    },
+                                    accept='image/*'
+                                ),
+                                html.Div(id ='result-tab-cartoon')
+                        ])
+                ]),
+            ]),
+            dcc.Tab(label='Face To Simpson', children=[
+                html.Div(children=[
+                        html.Div(children=[
+                                html.H4('CelebA (Source) -> Simpson Dataset (Target)',
+                                        style = {
+                                            'textAlign': 'center'
+                                        }
+                                    ),
+                                html.P('For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
+                                html.P('We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
+                                html.H6('Sample Generated Images (Faces generated in Emoji domain)',
+                                            style = {
+                                                'textAlign': 'center'
+                                            }
+                                ),
+                                dcc.Upload(
+                                    id='upload-image-simpson',
+                                    children=[
+                                        'Drag and Drop or ',
+                                        html.A('Select an Image')
+                                    ],
+                                    style={
+                                        'width': '28%',
+                                        'height': '50px',
+                                        'lineHeight': '50px',
+                                        'borderWidth': '1px',
+                                        'borderStyle': 'dashed',
+                                        'borderRadius': '5px',
+                                        'textAlign': 'center',
+                                        'margin-left': '35%'
+                                    },
+                                    accept='image/*'
+                                ),
+                                html.Div(id ='result-tab-simpson')
+                        ])
+                ]),
             ]),
         ])
     ])
@@ -170,7 +315,24 @@ app.layout = html.Div([
     [Input(component_id = 'upload-image',component_property = 'contents')]
 )
 def update_digits_pred(contents):
-    return html.Img(src=contents)
+    #print(type(contents))
+    if contents:
+        data = contents.split(',')
+        #print(data[1])
+        img = b64_to_pil(data[1])
+        #Do transform
+        out =  pil_to_b64(img)
+    else:
+        out = contents
+    return html.Div(children=[
+                html.Img(
+                    src=HTML_IMG_SRC_PARAMETERS + out,
+                    width='200px'
+                )
+            ], style = {
+                'textAlign': 'center'
+            })
+
 
 @app.callback(
     dash.dependencies.Output('digits-result', 'children'),
@@ -202,7 +364,9 @@ def update_output(value):
                     src=HTML_IMG_SRC_PARAMETERS + encoded_out,
                     width='200px'
                 )
-            ])
+            ], style = {
+                'textAlign': 'center'
+            })
 
 if __name__ == '__main__':
     app.run_server(debug=True)
