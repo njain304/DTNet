@@ -10,23 +10,27 @@ from torch.autograd import Variable
 from PIL import Image
 import numpy as np
 
+
 class ResizeTransform(object):
     ''' Resizes a PIL image to (size, size) to feed into OpenFace net and returns a torch tensor.'''
+
     def __init__(self, size):
         self.size = size
-        
+
     def __call__(self, sample):
         img = sample.resize((self.size, self.size), Image.BILINEAR)
         img = np.transpose(img, (2, 0, 1))
         img = img.astype(np.float32) / 255.0
         return torch.from_numpy(img)
-    
+
+
 class ZeroPadBottom(object):
     ''' Zero pads batch of image tensor Variables on bottom to given size. Input (B, C, H, W) - padded on H axis. '''
+
     def __init__(self, size, use_gpu=True):
         self.size = size
         self.use_gpu = use_gpu
-        
+
     def __call__(self, sample):
         B, C, H, W = sample.size()
         diff = self.size - H
@@ -35,28 +39,33 @@ class ZeroPadBottom(object):
             padding = padding.cuda()
         zero_padded = torch.cat((sample, padding), dim=2)
         return zero_padded
-    
+
+
 class NormalizeRangeTanh(object):
     ''' Normalizes a tensor with values from [0, 1] to [-1, 1]. '''
+
     def __init__(self):
         pass
-    
+
     def __call__(self, sample):
         sample = sample * 2.0 - 1.0
         return sample
-    
+
+
 class UnNormalizeRangeTanh(object):
     ''' Unnormalizes a tensor with values from [-1, 1] to [0, 1]. '''
+
     def __init__(self):
         pass
-    
+
     def __call__(self, sample):
         sample = (sample + 1.0) * 0.5
         return sample
-        
-    
+
+
 class UnNormalize(object):
     ''' from https://discuss.pytorch.org/t/simple-way-to-inverse-transform-normalization/4821/3'''
+
     def __init__(self, mean, std):
         mean_arr = []
         for dim in range(len(mean)):

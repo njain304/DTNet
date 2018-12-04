@@ -1,5 +1,8 @@
+import torch
+
 class NormalizeRangeTanh(object):
     ''' Normalizes a tensor with values from [0, 1] to [-1, 1]. '''
+
     def __init__(self):
         pass
 
@@ -7,8 +10,10 @@ class NormalizeRangeTanh(object):
         sample = sample * 2.0 - 1.0
         return sample
 
+
 class UnNormalizeRangeTanh(object):
     ''' Unnormalizes a tensor with values from [-1, 1] to [0, 1]. '''
+
     def __init__(self):
         pass
 
@@ -19,6 +24,7 @@ class UnNormalizeRangeTanh(object):
 
 class UnNormalize(object):
     ''' from https://discuss.pytorch.org/t/simple-way-to-inverse-transform-normalization/4821/3'''
+
     def __init__(self, mean, std):
         mean_arr = []
         for dim in range(len(mean)):
