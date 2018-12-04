@@ -9,23 +9,21 @@ Source of the data: https://www.kaggle.com/kostastokis/simpsons-faces#cropped.zi
 """
 
 import os
-from torch.utils.data import Dataset, DataLoader
+
 from PIL import Image
-import numpy as np
-import torch
-from torch.autograd import Variable
+from torch.utils.data import Dataset
 
 
 class Simpsons(Dataset):
-    
-    def __init__(self, data_dir='./data/simpsons', 
-                         split='train',transform=None, target_transform=None):
+
+    def __init__(self, data_dir='./data/simpsons',
+                 split='train', transform=None, target_transform=None):
         self.data_dir = data_dir
         self.split = split
         self.transform = transform
         self.target_transform = target_transform
         self.len = len(os.listdir(data_dir))
-        
+
     def __getitem__(self, index):
         """
         Args:
@@ -38,8 +36,8 @@ class Simpsons(Dataset):
 
         if self.transform is not None:
             img = self.transform(img)
-                                   
+
         return img
 
     def __len__(self):
-        return self.len   
+        return self.len

@@ -9,17 +9,15 @@ Source of the data: bitmoji/emoji_data.py
 """
 
 import os
-from torch.utils.data import Dataset, DataLoader
+
 from PIL import Image
-import numpy as np
-import torch
-from torch.autograd import Variable
+from torch.utils.data import Dataset
 
 
 class Cartoon(Dataset):
 
     def __init__(self, data_dir='./data/emojis',
-                         split='train',transform=None, target_transform=None):
+                 split='train', transform=None, target_transform=None):
         self.data_dir = data_dir
         self.split = split
         self.transform = transform

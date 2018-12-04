@@ -5,17 +5,15 @@
 """
 
 import os
-from torch.utils.data import Dataset, DataLoader
+
 from PIL import Image
-import numpy as np
-import torch
-from torch.autograd import Variable
+from torch.utils.data import Dataset
 
 
 class FolderDataset(Dataset):
 
     def __init__(self, data_dir='./results/digits/evals',
-                         split='train',transform=None, target_transform=None):
+                 split='train', transform=None, target_transform=None):
         self.data_dir = data_dir
         self.split = split
         self.transform = transform
@@ -28,7 +26,7 @@ class FolderDataset(Dataset):
             index (int): Index
         """
         img_name = os.path.join(self.data_dir, '{}.png'.format(index))
-        #print(img_name)
+        # print(img_name)
         img = Image.open(img_name)
         img = img.convert('RGB')
 

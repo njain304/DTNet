@@ -1,4 +1,6 @@
 from torch.utils.data import Dataset
+
+
 class LimitDataset(Dataset):
     def __init__(self, dataset, n):
         self.dataset = dataset
