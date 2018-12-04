@@ -129,7 +129,7 @@ def predict_emoji(image):
     img_v = Variable(image.float().cuda(), requires_grad=False)
     f, f_736 = open_f_model(img_v)
     print(f.size(), f_736.size())
-    s_G = model['G_model'](torch.cat((f, f_736), dim=1))
+    s_G = emoji_model['G_model'](torch.cat((f, f_736), dim=1))
 
     s_G = up96(s_G)
     s_G = s_G.cpu().data
