@@ -40,11 +40,11 @@ class DigitsTrainTest(BaseTest):
         SVHN_transform = transforms.Compose([transforms.ToTensor(), NormalizeRangeTanh()])
         MNIST_transform =transforms.Compose([transforms.Scale(32),transforms.ToTensor(),NormalizeRangeTanh()])
 
-        s_train_set = limits.LimitDataset(torchvision.datasets.SVHN(root = './data/svhn', split='extra',download = False, transform = SVHN_transform), 10024)
+        s_train_set = torchvision.datasets.SVHN(root = './data/svhn', split='extra',download = True, transform = SVHN_transform)
         self.s_train_loader = torch.utils.data.DataLoader(s_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
-        t_train_set = limits.LimitDataset(torchvision.datasets.MNIST(root='./data/mnist', train=True, download = False, transform = MNIST_transform),10024)
+        t_train_set = torchvision.datasets.MNIST(root='./data/mnist', train=True, download = True, transform = MNIST_transform)
         self.t_train_loader = torch.utils.data.DataLoader(t_train_set, batch_size=128,
                                           shuffle=True, num_workers=8)
 
