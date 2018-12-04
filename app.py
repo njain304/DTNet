@@ -316,20 +316,21 @@ app.layout = html.Div([
     Output(component_id='result-tab-emoji', component_property='children'),
     [Input(component_id = 'upload-image',component_property = 'contents')]
 )
-def predict_emoji(contents):
+def update_emoji(contents):
     #print(type(contents))
     print(contents)
     if contents:
-        #data = contents.split(',')
+        data = str(contents)[23:]
         #print(data[1])
-        img = b64_to_pil(contents)
+        img = b64_to_pil(data)
         tgt_img = predict_emoji(img)
-        out =  pil_to_b64(img)
+        tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+        out =  pil_to_b64(tgt_img)
     else:
         out = contents
     return html.Div(children=[
                 html.Img(
-                    src=HTML_IMG_SRC_PARAMETERS + contents,
+                    src=contents,
                     width='200px'
                 ),
                 html.Img(
@@ -345,19 +346,20 @@ def predict_emoji(contents):
     Output(component_id='result-tab-cartoon', component_property='children'),
     [Input(component_id = 'upload-image-cartoon',component_property = 'contents')]
 )
-def predict_cartoon(contents):
+def update_cartoon(contents):
     #print(type(contents))
     if contents:
-        data = contents.split(',')
+        data = str(contents)[23:]
         #print(data[1])
-        img = b64_to_pil(data[1])
+        img = b64_to_pil(data)
         tgt_img = predict_cartoon(img)
-        out =  pil_to_b64(img)
+        tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+        out =  pil_to_b64(tgt_img)
     else:
         out = contents
     return html.Div(children=[
                 html.Img(
-                    src=HTML_IMG_SRC_PARAMETERS + contents,
+                    src=contents,
                     width='200px'
                 ),
                 html.Img(
@@ -373,19 +375,20 @@ def predict_cartoon(contents):
     Output(component_id='result-tab-simpson', component_property='children'),
     [Input(component_id = 'upload-image-simpson',component_property = 'contents')]
 )
-def predict_simpson(contents):
+def update_simpson(contents):
     #print(type(contents))
     if contents:
-        data = contents.split(',')
+        data = str(contents)[23:]
         #print(data[1])
-        img = b64_to_pil(data[1])
-        tgt_img = predict_simpsons(img)
-        out =  pil_to_b64(img)
+        img = b64_to_pil(data)
+        tgt_img = predict_cartoon(img)
+        tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+        out =  pil_to_b64(tgt_img)
     else:
         out = contents
     return html.Div(children=[
                 html.Img(
-                    src=HTML_IMG_SRC_PARAMETERS + contents,
+                    src=contents,
                     width='200px'
                 ),
                 html.Img(
