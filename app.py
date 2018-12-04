@@ -16,6 +16,8 @@ from PIL import Image
 
 import digits_server
 
+from predict_all import *
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -229,7 +231,7 @@ app.layout = html.Div([
                                     },
                                     accept='image/*'
                                 ),
-                                html.Div(id ='result-tab-1')
+                                html.Div(id ='result-tab-emoji')
                         ])
                 ]),
             ]),
@@ -311,21 +313,27 @@ app.layout = html.Div([
     ])
 ])
 @app.callback(
-    Output(component_id='result-tab-1', component_property='children'),
+    Output(component_id='result-tab-emoji', component_property='children'),
     [Input(component_id = 'upload-image',component_property = 'contents')]
 )
-def update_digits_pred(contents):
+def predict_emoji(contents):
     #print(type(contents))
+    print(contents)
     if contents:
-        data = contents.split(',')
+        #data = contents.split(',')
         #print(data[1])
-        img = b64_to_pil(data[1])
-        #Do transform
+        img = b64_to_pil(contents)
+        tgt_img = predict_emoji(img)
         out =  pil_to_b64(img)
     else:
         out = contents
     return html.Div(children=[
                 html.Img(
+                    src=HTML_IMG_SRC_PARAMETERS + contents,
+                    width='200px'
+                ),
+                html.Img(
+
                     src=HTML_IMG_SRC_PARAMETERS + out,
                     width='200px'
                 )
@@ -333,6 +341,61 @@ def update_digits_pred(contents):
                 'textAlign': 'center'
             })
 
+@app.callback(
+    Output(component_id='result-tab-cartoon', component_property='children'),
+    [Input(component_id = 'upload-image-cartoon',component_property = 'contents')]
+)
+def predict_cartoon(contents):
+    #print(type(contents))
+    if contents:
+        data = contents.split(',')
+        #print(data[1])
+        img = b64_to_pil(data[1])
+        tgt_img = predict_cartoon(img)
+        out =  pil_to_b64(img)
+    else:
+        out = contents
+    return html.Div(children=[
+                html.Img(
+                    src=HTML_IMG_SRC_PARAMETERS + contents,
+                    width='200px'
+                ),
+                html.Img(
+
+                    src=HTML_IMG_SRC_PARAMETERS + out,
+                    width='200px'
+                )
+            ], style = {
+                'textAlign': 'center'
+            })
+
+@app.callback(
+    Output(component_id='result-tab-simpson', component_property='children'),
+    [Input(component_id = 'upload-image-simpson',component_property = 'contents')]
+)
+def predict_simpson(contents):
+    #print(type(contents))
+    if contents:
+        data = contents.split(',')
+        #print(data[1])
+        img = b64_to_pil(data[1])
+        tgt_img = predict_simpsons(img)
+        out =  pil_to_b64(img)
+    else:
+        out = contents
+    return html.Div(children=[
+                html.Img(
+                    src=HTML_IMG_SRC_PARAMETERS + contents,
+                    width='200px'
+                ),
+                html.Img(
+
+                    src=HTML_IMG_SRC_PARAMETERS + out,
+                    width='200px'
+                )
+            ], style = {
+                'textAlign': 'center'
+            })
 
 @app.callback(
     dash.dependencies.Output('digits-result', 'children'),

@@ -23,18 +23,22 @@ predict_transform = transforms.Compose(
 unnorm_emoji = UnNormalizeRangeTanh()
 up96 = nn.Upsample(size=(96,96), mode='bilinear')
 
-cartoon_f_model = sphere20a(feature=True)
-cartoon_f_model.load_state_dict(torch.load('./pretrained_model/sphere20a_20171020.pth'))
-for param in cartoon_f_model.parameters():
-	param.requires_grad = False
-cartoon_f_model = cartoon_f_model.cuda()
-cartoon_model = torch.load('./final_models/cartoonset/fin_model_cartoon.tar')
+#cartoon_f_model = sphere20a(feature=True)
+#cartoon_f_model.load_state_dict(torch.load('./pretrained_model/sphere20a_20171020.pth'))
+#for param in cartoon_f_model.parameters():
+#	param.requires_grad = False
+#cartoon_f_model = cartoon_f_model.cuda()
+#cartoon_model = torch.load('./final_models/cartoonset/fin_model_cartoon.tar')
 
-open_f_model = OpenFace(True, 0)
-open_f_model.load_state_dict(torch.load('./pretrained_model/openface.pth'))
+open_f_model = OpenFace(False, 0)
+open_f_model.load_state_dict(torch.load('./models/openf_cpu.pt'))
 open_f_model = open_f_model.eval()
-simpson_model = torch.load('./final_models/simpsons/fin_model_simpson.tar')
-emoji_model = torch.load('./final_models/emoji/fin_model_emoji.tar')
+
+emoji_model = faces_model.G(in_channels=864)
+emoji_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
+
+simpson_model = faces_model.G(in_channels=864)
+simpson_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
 
 class ZeroPadBottom(object):
     ''' Zero pads batch of image tensor Variables on bottom to given size. Input (B, C, H, W) - padded on H axis. '''
@@ -96,12 +100,12 @@ def predict_simpsons(image):
     # data_iter = iter(train_loader)
     # img_tens = data_iter.next()
 #     img_tens = img_tens.cuda()
-    img_v = Variable(image.float().cuda(), requires_grad=False)
+    img_v = Variable(image.float(), requires_grad=False)
     f, f_736 = open_f_model(img_v)
     #print(f.size(), f_736.size())
-    s_G = simposon_model['G_model'](torch.cat((f, f_736), dim=1))
+    s_G = simpson_model(torch.cat((f, f_736), dim=1))
     s_G = up96(s_G)
-    s_G = s_G.cpu().data
+    s_G = s_G.data
 
     res = unnorm_emoji(s_G[:16])
     npimg = torchvision.utils.make_grid(res, nrow=4).numpy()
@@ -126,13 +130,13 @@ def predict_emoji(image):
     # data_iter = iter(train_loader)
     # img_tens = data_iter.next()
 #     img_tens = img_tens.cuda()
-    img_v = Variable(image.float().cuda(), requires_grad=False)
+    img_v = Variable(image.float(), requires_grad=False)
     f, f_736 = open_f_model(img_v)
     print(f.size(), f_736.size())
-    s_G = emoji_model['G_model'](torch.cat((f, f_736), dim=1))
+    s_G = emoji_model(torch.cat((f, f_736), dim=1))
 
     s_G = up96(s_G)
-    s_G = s_G.cpu().data
+    s_G = s_G.data
     res = unnorm_emoji(s_G[:16])
     npimg = torchvision.utils.make_grid(res, nrow=4).numpy()
     npimg = np.transpose(npimg, (1, 2, 0))
