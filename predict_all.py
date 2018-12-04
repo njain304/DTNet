@@ -1,7 +1,7 @@
 import torch
 import faces_model
 from PIL import Image
-import data
+import data_utils as data
 import torchvision.transforms as transforms
 from torch.autograd import Variable
 from net_sphere import sphere20a
@@ -12,7 +12,7 @@ import torchvision
 
 import torch.nn as nn
 
-from DTNet.datasets import celebA
+from datasets import celebA
 from data_utils import *
 
 

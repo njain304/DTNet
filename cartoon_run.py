@@ -5,8 +5,8 @@ from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
 
-from data import ResizeTransform, SVHNDataset
-from DTNet.datasets import celebA
+from data_utils import ResizeTransform
+from datasets import celebA
 
 from cartoon_train import FaceTestSphere
 

@@ -15,7 +15,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn as nn
 import torchvision.transforms as transforms
-from DTNet.datasets import celebA, simpsons
+from datasets import celebA, simpsons
         
 class FaceTest(BaseTest):
     '''
