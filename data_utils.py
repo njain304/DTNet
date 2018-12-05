@@ -12,8 +12,6 @@ import numpy as np
 
 
 class ResizeTransform(object):
-    ''' Resizes a PIL image to (size, size) to feed into OpenFace net and returns a torch tensor.'''
-
     def __init__(self, size):
         self.size = size
 
@@ -24,9 +22,7 @@ class ResizeTransform(object):
         return torch.from_numpy(img)
 
 
-class ZeroPadBottom(object):
-    ''' Zero pads batch of image tensor Variables on bottom to given size. Input (B, C, H, W) - padded on H axis. '''
-
+class ZeroPadding(object):
     def __init__(self, size, use_gpu=True):
         self.size = size
         self.use_gpu = use_gpu
@@ -41,9 +37,7 @@ class ZeroPadBottom(object):
         return zero_padded
 
 
-class NormalizeRangeTanh(object):
-    ''' Normalizes a tensor with values from [0, 1] to [-1, 1]. '''
-
+class TanhNormalize(object):
     def __init__(self):
         pass
 
@@ -52,9 +46,7 @@ class NormalizeRangeTanh(object):
         return sample
 
 
-class UnNormalizeRangeTanh(object):
-    ''' Unnormalizes a tensor with values from [-1, 1] to [0, 1]. '''
-
+class TanhDeNormalize(object):
     def __init__(self):
         pass
 
@@ -64,8 +56,6 @@ class UnNormalizeRangeTanh(object):
 
 
 class UnNormalize(object):
-    ''' from https://discuss.pytorch.org/t/simple-way-to-inverse-transform-normalization/4821/3'''
-
     def __init__(self, mean, std):
         mean_arr = []
         for dim in range(len(mean)):
@@ -77,12 +67,6 @@ class UnNormalize(object):
         self.std = torch.Tensor(std_arr).view(1, len(std), 1, 1)
 
     def __call__(self, tensor):
-        """
-        Args:
-            tensor (Tensor): Tensor image of size (B, C, H, W) to be normalized.
-        Returns:
-            Tensor: Normalized image.
-        """
         tensor *= self.std
         tensor += self.mean
         return tensor

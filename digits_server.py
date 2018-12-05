@@ -9,22 +9,19 @@ from torch.autograd import Variable
 import digits_model
 from utils import NormalizeRangeTanh, UnNormalizeRangeTanh
 
-
-class ZeroPadBottom(object):
-    ''' Zero pads batch of image tensor Variables on bottom to given size. Input (B, C, H, W) - padded on H axis. '''
-
-    def __init__(self, size, use_gpu=True):
-        self.size = size
-        self.use_gpu = use_gpu
-
-    def __call__(self, sample):
-        B, C, H, W = sample.size()
-        diff = self.size - H
-        padding = Variable(torch.zeros(B, C, diff, W), requires_grad=False)
-        if self.use_gpu:
-            padding = padding.cuda()
-        zero_padded = torch.cat((sample, padding), dim=2)
-        return zero_padded
+# class ZeroPadBottom(object):
+#     def __init__(self, size, use_gpu=True):
+#         self.size = size
+#         self.use_gpu = use_gpu
+#
+#     def __call__(self, sample):
+#         B, C, H, W = sample.size()
+#         diff = self.size - H
+#         padding = Variable(torch.zeros(B, C, diff, W), requires_grad=False)
+#         if self.use_gpu:
+#             padding = padding.cuda()
+#         zero_padded = torch.cat((sample, padding), dim=2)
+#         return zero_padded
 
 
 if torch.cuda.is_available():

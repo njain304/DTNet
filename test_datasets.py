@@ -18,7 +18,7 @@ import numpy as np
 
 simp_transform = transforms.Compose([
     data_utils.ResizeTransform(96),
-    data_utils.NormalizeRangeTanh()
+    data_utils.TanhNormalize()
 ])
 simp_train_set = Simpsons(transform=simp_transform)
 

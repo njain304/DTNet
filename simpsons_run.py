@@ -22,10 +22,7 @@ digit_test.create_model()
 digit_test.init_loss_function()
 digit_test.init_optimizer()
 print('Starting training')
-kwargs = {}
-kwargs["visualize_batches"] = 50
-kwargs["save_batches"] = 50
-kwargs["test_batches"] = 50
+kwargs = {"visualize_batches": 50, "save_batches": 50, "test_batches": 50}
 digit_test.train(num_epochs=600, **kwargs)
 
 checkpoint_name = './log/fin_model.tar'

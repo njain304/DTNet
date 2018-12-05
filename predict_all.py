@@ -1,20 +1,18 @@
-import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 
 import data_utils as data
 import faces_model
-from net_sphere import *
 from data_utils import *
+from net_sphere import *
 from open_face_model import OpenFace
-import faces_model_cartoon
 
 toPIL = transforms.ToPILImage()
 toTensor = transforms.ToTensor()
-pad112 = ZeroPadBottom(112, False)
+pad112 = ZeroPadding(112, False)
 predict_transform = transforms.Compose(
-    [data.ResizeTransform(96), data.NormalizeRangeTanh()])
-unnorm_emoji = UnNormalizeRangeTanh()
+    [data.ResizeTransform(96), data.TanhNormalize()])
+unnorm_emoji = TanhDeNormalize()
 up96 = nn.Upsample(size=(96, 96), mode='bilinear')
 
 

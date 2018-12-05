@@ -1,4 +1,3 @@
-import numpy
 from collections import OrderedDict
 
 import numpy
@@ -59,33 +58,24 @@ class Inception(nn.Module):
     def __init__(self, inputSize, kernelSize, kernelStride, outputSize, reduceSize, pool, useBatchNorm,
                  reduceStride=None, padding=True):
         super(Inception, self).__init__()
-        #
         self.seq_list = []
         self.outputSize = outputSize
 
-        #
-        # 1x1 conv (reduce) -> 3x3 conv
-        # 1x1 conv (reduce) -> 5x5 conv
-        # ...
         for i in range(len(kernelSize)):
             od = OrderedDict()
-            # 1x1 conv
             od['1_conv'] = Conv2d(inputSize, reduceSize[i], (1, 1), reduceStride[i] if reduceStride is not None else 1,
                                   (0, 0))
             if useBatchNorm:
                 od['2_bn'] = BatchNorm(reduceSize[i])
             od['3_relu'] = nn.ReLU()
-            # nxn conv
             pad = int(numpy.floor(kernelSize[i] / 2)) if padding else 0
             od['4_conv'] = Conv2d(reduceSize[i], outputSize[i], kernelSize[i], kernelStride[i], pad)
             if useBatchNorm:
                 od['5_bn'] = BatchNorm(outputSize[i])
             od['6_relu'] = nn.ReLU()
-            #
             self.seq_list.append(nn.Sequential(od))
 
         ii = len(kernelSize)
-        # pool -> 1x1 conv
         od = OrderedDict()
         od['1_pool'] = pool
         if ii < len(reduceSize) and reduceSize[ii] is not None:
@@ -95,11 +85,9 @@ class Inception(nn.Module):
             if useBatchNorm:
                 od['3_bn'] = BatchNorm(reduceSize[i])
             od['4_relu'] = nn.ReLU()
-        #
         self.seq_list.append(nn.Sequential(od))
         ii += 1
 
-        # reduce: 1x1 conv (channel-wise pooling)
         if ii < len(reduceSize) and reduceSize[ii] is not None:
             i = ii
             od = OrderedDict()
@@ -119,23 +107,16 @@ class Inception(nn.Module):
         target_size = None
         depth_dim = 0
         for seq in self.seq_list:
-            # print(seq)
-            # print(self.outputSize)
-            # print('x_size:', x.size())
             y = seq(x)
             y_size = y.size()
-            # print('y_size:', y_size)
             ys.append(y)
-            #
             if target_size is None:
                 target_size = [0] * len(y_size)
-            #
             for i in range(len(target_size)):
                 target_size[i] = max(target_size[i], y_size[i])
             depth_dim += y_size[1]
 
         target_size[1] = depth_dim
-        # print('target_size:', target_size)
 
         for i in range(len(ys)):
             y_size = ys[i].size()
@@ -185,12 +166,9 @@ class OpenFace(nn.Module):
         self.layer22 = nn.AvgPool2d((3, 3), stride=(1, 1), padding=(0, 0))
         self.layer25 = Linear(736, 128)
 
-        #
         self.resize1 = nn.UpsamplingNearest2d(scale_factor=3)
         self.resize2 = nn.AvgPool2d(4)
 
-        #
-        # self.eval()
 
         if useCuda:
             self.cuda(gpuDevice)

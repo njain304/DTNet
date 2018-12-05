@@ -1,5 +1,6 @@
 import torch
 
+
 class NormalizeRangeTanh(object):
     ''' Normalizes a tensor with values from [0, 1] to [-1, 1]. '''
 

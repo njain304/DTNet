@@ -10,11 +10,9 @@ class ConvTransBNConv1(nn.Module):
         self.block = nn.Sequential(
             nn.ConvTranspose2d(self.in_c, self.out_c, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(self.out_c),
-            #             nn.ReLU(inplace=True),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Conv2d(self.out_c, self.out_c, kernel_size=1, stride=1, padding=0),
             nn.BatchNorm2d(self.out_c),
-            #             nn.ReLU(inplace=True)
             nn.LeakyReLU(0.2, inplace=True)
         )
 
@@ -23,18 +21,12 @@ class ConvTransBNConv1(nn.Module):
 
 
 class G(nn.Module):
-    '''
-    Generator for face to emoji domain transfer net.
-    Takes in 128d representation from OpenFace Net and outputs 64x64 RGB image.
-    - in_channels : number of channels in input data
-    '''
 
     def __init__(self, in_channels):
         super(self.__class__, self).__init__()
         self.in_channels = in_channels
 
         self.g = nn.Sequential(
-            # start with (128, 1, 1), l/w double each layer
             ConvTransBNConv1(self.in_channels, 512),
             ConvTransBNConv1(512, 256),
             ConvTransBNConv1(256, 128),
@@ -68,11 +60,6 @@ class ConvBNLRelu(nn.Module):
 
 
 class D(nn.Module):
-    '''
-    Discriminator for face to emoji domain transfer net.
-    Takes in 3x96x96 emoji image and outputs (3, 1, 1) classification.
-    - channels: bases number of filters in each layer on this channel number
-    '''
 
     def __init__(self, channels, alpha=0.2):
         super(self.__class__, self).__init__()

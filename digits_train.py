@@ -16,9 +16,6 @@ from utils import NormalizeRangeTanh, UnNormalizeRangeTanh
 
 
 class DigitsTrainTest(BaseTrain):
-    '''
-    Abstract class that outlines how a network test case should be defined.
-    '''
 
     def __init__(self, use_gpu=True):
         super(DigitsTrainTest, self).__init__(use_gpu)
@@ -60,10 +57,6 @@ class DigitsTrainTest(BaseTrain):
                                                          shuffle=False, num_workers=8)
 
     def visualize_single_batch(self):
-        '''
-        Plots a minibatch as an example of what the data looks like.
-        '''
-        # get some random training images
         dataiter_s = iter(self.s_train_loader)
         images_s, labels_s = dataiter_s.next()
 
@@ -76,9 +69,6 @@ class DigitsTrainTest(BaseTrain):
         plt.imshow(np.transpose(npimg, (1, 2, 0)))
 
     def create_model(self):
-        '''
-        Constructs the model, converts to GPU if necessary. Saves for training.
-        '''
         self.model = {}
         print('D')
         self.model['D'] = digits_model.D(128)
@@ -89,12 +79,10 @@ class DigitsTrainTest(BaseTrain):
 
         self.readClassifier('./pretrained_model/model_F_SVHN_NormRange.tar')
 
-        # Test
         model = torch.load('./pretrained_model/model_classifier_MNIST_NormRange.tar')
         self.model['MNIST_classifier'] = model['best_model']
 
     def init_loss_function(self):
-
         self.lossCE = nn.CrossEntropyLoss().cuda()
         self.lossMSE = nn.MSELoss().cuda()
         label_0, label_1, label_2 = (torch.LongTensor(self.batch_size) for i in range(3))
@@ -113,16 +101,12 @@ class DigitsTrainTest(BaseTrain):
         self.create_generator_loss_function()
 
     def init_optimizer(self):
-        '''
-        Creates and saves the optimizer to use for training.
-        '''
         g_lr = 1e-3
         g_reg = 1e-6
         self.g_optimizer = optim.Adam(self.model['G'].parameters(), lr=g_lr, weight_decay=g_reg)
 
         d_lr = 1e-3
         d_reg = 1e-6
-        # self.d_optimizer = optim.Adam(self.model['D'].parameters(), lr=d_lr, weight_decay=d_reg) #TODO: change to SGD? (according to GAN hacks)
         self.d_optimizer = optim.Adam(self.model['D'].parameters(), lr=d_lr, weight_decay=d_reg)
 
     def readClassifier(self, model_name):
@@ -139,35 +123,29 @@ class DigitsTrainTest(BaseTrain):
         for param in self.model['F'].parameters():
             param.requires_grad = False
 
-    def validate(self, **kwargs):
-        '''
-        Evaluate the model on the validation set.
-        '''
-        gan_loss_weight = kwargs.get("gan_loss_weight", 1e-3)
-        val_loss = 0
-        self.model['G'].eval()
-        samples = np.random.randint(0, len(s_val_set), size=5)
-        for i in samples:
-            s_data = s_val_set[i]
-            s_G = self.model['G'](s_data)
-            s_generator = self.model['G'](s_data)
-            s_classifier = self.model['F'](s_data)
-            s_G_classifer = self.model['G'](s_classifier)
-            s_D_generator = self.model['D'](s_generator)
-
-            g_loss, _, _ = self.g_loss_function(fake_curve_v, prepared_data)
-            gan_loss = self.gan_loss_function(logits_fake)
-            val_loss += g_loss.data[0] + gan_loss_weight * gan_loss.data[0]
-        val_loss /= len(self.val_loader)
-        self.model['G'].train()
-        return val_loss
+    # def validate(self, **kwargs):
+    #     gan_loss_weight = kwargs.get("gan_loss_weight", 1e-3)
+    #     val_loss = 0
+    #     self.model['G'].eval()
+    #     samples = np.random.randint(0, len(s_val_set), size=5)
+    #     for i in samples:
+    #         s_data = s_val_set[i]
+    #         s_G = self.model['G'](s_data)
+    #         s_generator = self.model['G'](s_data)
+    #         s_classifier = self.model['F'](s_data)
+    #         s_G_classifer = self.model['G'](s_classifier)
+    #         s_D_generator = self.model['D'](s_generator)
+    #
+    #         g_loss, _, _ = self.g_loss_function(fake_curve_v, prepared_data)
+    #         gan_loss = self.gan_loss_function(logits_fake)
+    #         val_loss += g_loss.data[0] + gan_loss_weight * gan_loss.data[0]
+    #     val_loss /= len(self.val_loader)
+    #     self.model['G'].train()
+    #     return val_loss
 
     def seeResults(self, s_data, s_G, f_path):
         s_data = s_data.cpu().data
         s_G = s_G.cpu().data
-        # Unnormalize MNIST images
-        # unnorm_SVHN = data.UnNormalize((0.5,0.5,0.5), (0.5,0.5,0.5))
-        # unnorm_MNIST = data.UnNormalize((0.1307,), (0.3081,))
         unnormRange = UnNormalizeRangeTanh()
         self.imshow(torchvision.utils.make_grid(unnormRange(s_data[:16]), nrow=4), f_path)
         self.imshow(torchvision.utils.make_grid(unnormRange(s_G[:16]), nrow=4), f_path)
@@ -182,12 +160,6 @@ class DigitsTrainTest(BaseTrain):
         plt.imsave(filepath, npimg)
 
     def create_discriminator_loss_function(self):
-        '''
-        Constructs the discriminator loss function.
-        '''
-
-        # s - face domain
-        # t - emoji domain
         def DLoss(s_D_G, t_D_G, t_D):
             L_d = self.lossCE(s_D_G.squeeze(), self.label_0) + self.lossCE(t_D_G.squeeze(), self.label_1) + self.lossCE(
                 t_D.squeeze(), self.label_2)
@@ -212,7 +184,6 @@ class DigitsTrainTest(BaseTrain):
         self.g_loss_function = GLoss
 
     def create_distance_function_Tdomain(self):
-        # define a distance function in T
         def Distance_T(t_1, t_2):
             distance = self.lossMSE
             return distance(t_1, t_2)
@@ -220,9 +191,6 @@ class DigitsTrainTest(BaseTrain):
         self.distance_Tdomain = Distance_T
 
     def train(self, num_epochs, **kwargs):
-        '''
-        Trains the model.
-        '''
         visualize_batches = kwargs.get("visualize_batches", 50)
         save_batches = kwargs.get("save_batches", 200)
         test_batches = kwargs.get("test_batches", 200)
@@ -338,9 +306,6 @@ class DigitsTrainTest(BaseTrain):
                     torch.save(self.log, checkpoint)
 
     def test(self):
-        '''
-        Tests the model and returns the loss.
-        '''
         total = 0
         correct = 0
         running_loss = 0

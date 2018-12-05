@@ -31,14 +31,14 @@ class AngleLinear(nn.Module):
         ]
 
     def forward(self, input):
-        x = input  # size=(B,F)    F is feature len
-        w = self.weight  # size=(F,Classnum) F=in_features Classnum=out_features
+        x = input
+        w = self.weight
 
         ww = w.renorm(2, 1, 1e-5).mul(1e5)
-        xlen = x.pow(2).sum(1).pow(0.5)  # size=B
-        wlen = ww.pow(2).sum(0).pow(0.5)  # size=Classnum
+        xlen = x.pow(2).sum(1).pow(0.5)
+        wlen = ww.pow(2).sum(0).pow(0.5)
 
-        cos_theta = x.mm(ww)  # size=(B,Classnum)
+        cos_theta = x.mm(ww)
         cos_theta = cos_theta / xlen.view(-1, 1) / wlen.view(1, -1)
         cos_theta = cos_theta.clamp(-1, 1)
 
@@ -56,7 +56,7 @@ class AngleLinear(nn.Module):
         cos_theta = cos_theta * xlen.view(-1, 1)
         phi_theta = phi_theta * xlen.view(-1, 1)
         output = (cos_theta, phi_theta)
-        return output  # size=(B,Classnum,2)
+        return output
 
 
 class AngleLoss(nn.Module):
@@ -71,15 +71,15 @@ class AngleLoss(nn.Module):
     def forward(self, input, target):
         self.it += 1
         cos_theta, phi_theta = input
-        target = target.view(-1, 1)  # size=(B,1)
+        target = target.view(-1, 1)
 
-        index = cos_theta.data * 0.0  # size=(B,Classnum)
+        index = cos_theta.data * 0.0
         index.scatter_(1, target.data.view(-1, 1), 1)
         index = index.byte()
         index = Variable(index)
 
         self.lamb = max(self.LambdaMin, self.LambdaMax / (1 + 0.1 * self.it))
-        output = cos_theta * 1.0  # size=(B,Classnum)
+        output = cos_theta * 1.0
         output[index] -= cos_theta[index] * (1.0 + 0) / (1 + self.lamb)
         output[index] += phi_theta[index] * (1.0 + 0) / (1 + self.lamb)
 
@@ -99,49 +99,48 @@ class sphere20a(nn.Module):
         super(sphere20a, self).__init__()
         self.classnum = classnum
         self.feature = feature
-        # input = B*3*112*96
-        self.conv1_1 = nn.Conv2d(3, 64, 3, 2, 1)  # =>B*64*56*48
+        self.conv1_1 = nn.Conv2d(3, 64, 3, 2, 1)
         self.relu1_1 = nn.PReLU(64)
         self.conv1_2 = nn.Conv2d(64, 64, 3, 1, 1)
         self.relu1_2 = nn.PReLU(64)
         self.conv1_3 = nn.Conv2d(64, 64, 3, 1, 1)
         self.relu1_3 = nn.PReLU(64)
 
-        self.conv2_1 = nn.Conv2d(64, 128, 3, 2, 1)  # =>B*128*28*24
+        self.conv2_1 = nn.Conv2d(64, 128, 3, 2, 1)
         self.relu2_1 = nn.PReLU(128)
         self.conv2_2 = nn.Conv2d(128, 128, 3, 1, 1)
         self.relu2_2 = nn.PReLU(128)
         self.conv2_3 = nn.Conv2d(128, 128, 3, 1, 1)
         self.relu2_3 = nn.PReLU(128)
 
-        self.conv2_4 = nn.Conv2d(128, 128, 3, 1, 1)  # =>B*128*28*24
+        self.conv2_4 = nn.Conv2d(128, 128, 3, 1, 1)
         self.relu2_4 = nn.PReLU(128)
         self.conv2_5 = nn.Conv2d(128, 128, 3, 1, 1)
         self.relu2_5 = nn.PReLU(128)
 
-        self.conv3_1 = nn.Conv2d(128, 256, 3, 2, 1)  # =>B*256*14*12
+        self.conv3_1 = nn.Conv2d(128, 256, 3, 2, 1)
         self.relu3_1 = nn.PReLU(256)
         self.conv3_2 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_2 = nn.PReLU(256)
         self.conv3_3 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_3 = nn.PReLU(256)
 
-        self.conv3_4 = nn.Conv2d(256, 256, 3, 1, 1)  # =>B*256*14*12
+        self.conv3_4 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_4 = nn.PReLU(256)
         self.conv3_5 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_5 = nn.PReLU(256)
 
-        self.conv3_6 = nn.Conv2d(256, 256, 3, 1, 1)  # =>B*256*14*12
+        self.conv3_6 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_6 = nn.PReLU(256)
         self.conv3_7 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_7 = nn.PReLU(256)
 
-        self.conv3_8 = nn.Conv2d(256, 256, 3, 1, 1)  # =>B*256*14*12
+        self.conv3_8 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_8 = nn.PReLU(256)
         self.conv3_9 = nn.Conv2d(256, 256, 3, 1, 1)
         self.relu3_9 = nn.PReLU(256)
 
-        self.conv4_1 = nn.Conv2d(256, 512, 3, 2, 1)  # =>B*512*7*6
+        self.conv4_1 = nn.Conv2d(256, 512, 3, 2, 1)
         self.relu4_1 = nn.PReLU(512)
         self.conv4_2 = nn.Conv2d(512, 512, 3, 1, 1)
         self.relu4_2 = nn.PReLU(512)
