@@ -27,8 +27,8 @@ open_f_model = OpenFace(False, 0)
 open_f_model.load_state_dict(torch.load('./models/openf_cpu.pt'))
 open_f_model = open_f_model.eval()
 
-sphere_f_model = sphere20a(feature=False)
-sphere_f_model.load_state_dict(torch.load('./models/spheref_cpu.pt'))
+# sphere_f_model = sphere20a(feature=False)
+# sphere_f_model.load_state_dict(torch.load('./models/spheref_cpu.pt'))
 
 emoji_model = faces_model.G(in_channels=864)
 emoji_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
@@ -36,8 +36,8 @@ emoji_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
 simpson_model = faces_model.G(in_channels=864)
 simpson_model.load_state_dict(torch.load('./models/simpson_g_cpu.pt'))
 
-cartoon_model = faces_model_cartoon.G(in_channels=512)
-cartoon_model.load_state_dict(torch.load('./models/cartoon_g_cpu.pt'))
+# cartoon_model = faces_model_cartoon.G(in_channels=512)
+# cartoon_model.load_state_dict(torch.load('./models/cartoon_g_cpu.pt'))
 
 class ZeroPadBottom(object):
     ''' Zero pads batch of image tensor Variables on bottom to given size. Input (B, C, H, W) - padded on H axis. '''
@@ -56,36 +56,38 @@ class ZeroPadBottom(object):
         return zero_padded
 
 
-def predict_cartoon(image):
-    # plt.imshow(image)
-    # plt.show()
-    img = image.convert('RGB')
-
-    image = predict_transform(img)
-    # plt.imshow(np.transpose(image, (1, 2, 0)))
-    image = toTensor(toPIL(image))
-    image = image.unsqueeze(0)
-    image = Variable(image.float())
-    image = pad112(image)
-    # image.size()
-    s_f = sphere_f_model(image)
-    out = cartoon_model(s_f)
-    #a = out.detach()
-    a = a.data
-    a = (a + 1.0) * 0.5
-    npimg_ms = a[0]
-    zero_array = np.zeros(npimg_ms.shape)
-    one_array = np.ones(npimg_ms.shape)
-
-    npimg_ms = np.minimum(npimg_ms, one_array)
-    npimg_ms = np.maximum(npimg_ms, zero_array)
-
-    # plt.imshow(np.transpose(npimg_ms, (1, 2, 0)))
-    # plt.show()
-    result = np.transpose(a[0], (1, 2, 0))
-    # a = np.expand_dims(a, axis=0)
-    # plt.imshow(result)
-    return result
+# def predict_cartoon(image):
+#     # plt.imshow(image)
+#     # plt.show()
+#     img = image.convert('RGB')
+#
+#     image = predict_transform(img)
+#     # plt.imshow(np.transpose(image, (1, 2, 0)))
+#     image = toTensor(toPIL(image))
+#     image = image.unsqueeze(0)
+#     image = Variable(image.float())
+#     image = pad112(image)
+#     # image.size()
+#     s_f = sphere_f_model(image)
+#     out = cartoon_model(s_f)
+#
+#     #a = out.detach()
+#     a = out
+#     a = a.data
+#     a = (a + 1.0) * 0.5
+#     npimg_ms = a[0]
+#     zero_array = np.zeros(npimg_ms.shape)
+#     one_array = np.ones(npimg_ms.shape)
+#
+#     npimg_ms = np.minimum(npimg_ms, one_array)
+#     npimg_ms = np.maximum(npimg_ms, zero_array)
+#
+#     # plt.imshow(np.transpose(npimg_ms, (1, 2, 0)))
+#     # plt.show()
+#     result = np.transpose(a[0], (1, 2, 0))
+#     # a = np.expand_dims(a, axis=0)
+#     # plt.imshow(result)
+#     return result
 
 
 def predict_simpsons(image):

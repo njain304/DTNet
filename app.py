@@ -207,7 +207,7 @@ app.layout = html.Div([
                             'For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
                         html.P(
                             'We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
-                        html.H6('Sample Generated Images (Faces generated in Emoji domain)',
+                        html.H6('Upload Face Image to generate emoji...',
                                 style={
                                     'textAlign': 'center'
                                 }
@@ -234,45 +234,45 @@ app.layout = html.Div([
                     ])
                 ]),
             ]),
-            dcc.Tab(label='Face To Cartoons', children=[
-                html.Div(children=[
-                    html.Div(children=[
-                        html.H4('CelebA (Source) -> CartoonSet (Target)',
-                                style={
-                                    'textAlign': 'center'
-                                }
-                                ),
-                        html.P(
-                            'For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
-                        html.P(
-                            'We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
-                        html.H6('Sample Generated Images (Faces generated in Emoji domain)',
-                                style={
-                                    'textAlign': 'center'
-                                }
-                                ),
-                        dcc.Upload(
-                            id='upload-image-cartoon',
-                            children=[
-                                'Drag and Drop or ',
-                                html.A('Select an Image')
-                            ],
-                            style={
-                                'width': '28%',
-                                'height': '50px',
-                                'lineHeight': '50px',
-                                'borderWidth': '1px',
-                                'borderStyle': 'dashed',
-                                'borderRadius': '5px',
-                                'textAlign': 'center',
-                                'margin-left': '35%'
-                            },
-                            accept='image/*'
-                        ),
-                        html.Div(id='result-tab-cartoon')
-                    ])
-                ]),
-            ]),
+            # dcc.Tab(label='Face To Cartoons', children=[
+            #     html.Div(children=[
+            #         html.Div(children=[
+            #             html.H4('CelebA (Source) -> CartoonSet (Target)',
+            #                     style={
+            #                         'textAlign': 'center'
+            #                     }
+            #                     ),
+            #             html.P(
+            #                 'For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
+            #             html.P(
+            #                 'We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
+            #             html.H6('Sample Generated Images (Faces generated in Emoji domain)',
+            #                     style={
+            #                         'textAlign': 'center'
+            #                     }
+            #                     ),
+            #             dcc.Upload(
+            #                 id='upload-image-cartoon',
+            #                 children=[
+            #                     'Drag and Drop or ',
+            #                     html.A('Select an Image')
+            #                 ],
+            #                 style={
+            #                     'width': '28%',
+            #                     'height': '50px',
+            #                     'lineHeight': '50px',
+            #                     'borderWidth': '1px',
+            #                     'borderStyle': 'dashed',
+            #                     'borderRadius': '5px',
+            #                     'textAlign': 'center',
+            #                     'margin-left': '35%'
+            #                 },
+            #                 accept='image/*'
+            #             ),
+            #             html.Div(id='result-tab-cartoon')
+            #         ])
+            #     ]),
+            # ]),
             dcc.Tab(label='Face To Simpson', children=[
                 html.Div(children=[
                     html.Div(children=[
@@ -282,10 +282,10 @@ app.layout = html.Div([
                                 }
                                 ),
                         html.P(
-                            'For Emoji generation of Faces, we have used celebA dataset (200k images) and generated 100k Emojis using BitMoji API.'),
+                            'For Simpson Face Transfer, we have used celebA dataset (200k images) as Source. Simpson Faces are face centred with size of 200X200. The total number of images are 9877 in this dataset.'),
                         html.P(
-                            'We take celebA as `Source` and Emoji as `Target`. We have used Openface model as `f` block for feature exctraction.'),
-                        html.H6('Sample Generated Images (Faces generated in Emoji domain)',
+                            'In simspons, we did not get visual results on test set but did observed that with each epoch generator is learning some characteristic features from simspons images.The simpsons dataset is face cropped but not face centred. Thus, the final face structure in the generated images is also not face centred.'),
+                        html.H6('Upload face image to transfer it in Simpson Face...',
                                 style={
                                     'textAlign': 'center'
                                 }
@@ -347,34 +347,34 @@ def update_emoji(contents):
     })
 
 
-@app.callback(
-    Output(component_id='result-tab-cartoon', component_property='children'),
-    [Input(component_id='upload-image-cartoon', component_property='contents')]
-)
-def update_cartoon(contents):
-
-    if contents:
-        data = str(contents)[23:]
-
-        img = b64_to_pil(data)
-        tgt_img = predict_cartoon(img)
-        #tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
-        out = numpy_to_b64(tgt_img)
-    else:
-        out = contents
-    return html.Div(children=[
-        html.Img(
-            src=contents,
-            width='200px'
-        ),
-        html.Img(
-
-            src=HTML_IMG_SRC_PARAMETERS + out,
-            width='200px'
-        )
-    ], style={
-        'textAlign': 'center'
-    })
+# @app.callback(
+#     Output(component_id='result-tab-cartoon', component_property='children'),
+#     [Input(component_id='upload-image-cartoon', component_property='contents')]
+# )
+# def update_cartoon(contents):
+#
+#     if contents:
+#         data = str(contents)[23:]
+#
+#         img = b64_to_pil(data)
+#         tgt_img = predict_cartoon(img)
+#         #tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+#         out = numpy_to_b64(tgt_img)
+#     else:
+#         out = contents
+#     return html.Div(children=[
+#         html.Img(
+#             src=contents,
+#             width='200px'
+#         ),
+#         html.Img(
+#
+#             src=HTML_IMG_SRC_PARAMETERS + out,
+#             width='200px'
+#         )
+#     ], style={
+#         'textAlign': 'center'
+#     })
 
 
 @app.callback(
