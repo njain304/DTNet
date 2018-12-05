@@ -26,12 +26,6 @@ class BaseTrain(object):
         '''
         pass
 
-    def visualize_single_batch(self):
-        '''
-        Plots a minibatch as an example of what the data looks like.
-        '''
-        pass
-
     def create_model(self):
         '''
         Constructs the model, converts to GPU if necessary. Saves for training.

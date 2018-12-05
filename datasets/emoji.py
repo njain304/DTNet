@@ -30,7 +30,7 @@ class Emoji(Dataset):
             index (int): Index
         """
         img_name = os.path.join(self.data_dir, '{}.png'.format(index))
-        print(img_name)
+#        print(img_name)
         img = Image.open(img_name)
         img = img.convert('RGB')
 
