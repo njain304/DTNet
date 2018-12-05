@@ -4,8 +4,10 @@ import torchvision.transforms as transforms
 
 import data_utils as data
 import faces_model
+from net_sphere import *
 from data_utils import *
 from open_face_model import OpenFace
+import faces_model_cartoon
 
 toPIL = transforms.ToPILImage()
 toTensor = transforms.ToTensor()
@@ -15,8 +17,7 @@ predict_transform = transforms.Compose(
 unnorm_emoji = UnNormalizeRangeTanh()
 up96 = nn.Upsample(size=(96, 96), mode='bilinear')
 
-# cartoon_f_model = sphere20a(feature=True)
-# cartoon_f_model.load_state_dict(torch.load('./pretrained_model/sphere20a_20171020.pth'))
+
 # for param in cartoon_f_model.parameters():
 #	param.requires_grad = False
 # cartoon_f_model = cartoon_f_model.cuda()
@@ -26,12 +27,17 @@ open_f_model = OpenFace(False, 0)
 open_f_model.load_state_dict(torch.load('./models/openf_cpu.pt'))
 open_f_model = open_f_model.eval()
 
+sphere_f_model = sphere20a(feature=False)
+sphere_f_model.load_state_dict(torch.load('./models/spheref_cpu.pt'))
+
 emoji_model = faces_model.G(in_channels=864)
 emoji_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
 
 simpson_model = faces_model.G(in_channels=864)
 simpson_model.load_state_dict(torch.load('./models/simpson_g_cpu.pt'))
 
+cartoon_model = faces_model_cartoon.G(in_channels=512)
+cartoon_model.load_state_dict(torch.load('./models/cartoon_g_cpu.pt'))
 
 class ZeroPadBottom(object):
     ''' Zero pads batch of image tensor Variables on bottom to given size. Input (B, C, H, W) - padded on H axis. '''
@@ -62,11 +68,10 @@ def predict_cartoon(image):
     image = Variable(image.float())
     image = pad112(image)
     # image.size()
-    s_f = cartoon_f_model(image)
-    g_model = cartoon_model['G_model']
-    out = g_model(s_f)
-    a = out.detach()
-    a = a.cpu().data
+    s_f = sphere_f_model(image)
+    out = cartoon_model(s_f)
+    #a = out.detach()
+    a = a.data
     a = (a + 1.0) * 0.5
     npimg_ms = a[0]
     zero_array = np.zeros(npimg_ms.shape)
