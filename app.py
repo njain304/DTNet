@@ -326,11 +326,10 @@ def update_emoji(contents):
     print(contents)
     if contents:
         data = str(contents)[23:]
-
         img = b64_to_pil(data)
         tgt_img = predict_emoji(img)
-        tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
-        out = pil_to_b64(tgt_img)
+        #tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+        out = numpy_to_b64(tgt_img)
     else:
         out = contents
     return html.Div(children=[
@@ -359,8 +358,8 @@ def update_cartoon(contents):
 
         img = b64_to_pil(data)
         tgt_img = predict_cartoon(img)
-        tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
-        out = pil_to_b64(tgt_img)
+        #tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+        out = numpy_to_b64(tgt_img)
     else:
         out = contents
     return html.Div(children=[
@@ -388,9 +387,9 @@ def update_simpson(contents):
         data = str(contents)[23:]
 
         img = b64_to_pil(data)
-        tgt_img = predict_cartoon(img)
-        tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
-        out = pil_to_b64(tgt_img)
+        tgt_img = predict_simpsons(img)
+        #tgt_img = Image.fromarray(tgt_img.astype('uint8'), 'RGB')
+        out = numpy_to_b64(tgt_img)
     else:
         out = contents
     return html.Div(children=[

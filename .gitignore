@@ -2,14 +2,11 @@
 data
 .ipynb_checkpoints
 .DS_Store
->>>>>>> 71665016dbafc41f0fef77cae43575b77a4cbbf1
 *.iml
 *.xml
 *.pyc
 data_utils.pyc
 datasets/__init__.pyc
-*.pyc
-data_utils.pyc
 datasets/__init__.pyc
 pretrained_model/.DS_Store
 pretrained_model/.DS_Store

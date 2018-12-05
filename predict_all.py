@@ -9,7 +9,7 @@ from open_face_model import OpenFace
 
 toPIL = transforms.ToPILImage()
 toTensor = transforms.ToTensor()
-pad112 = ZeroPadBottom(112)
+pad112 = ZeroPadBottom(112, False)
 predict_transform = transforms.Compose(
     [data.ResizeTransform(96), data.NormalizeRangeTanh()])
 unnorm_emoji = UnNormalizeRangeTanh()
@@ -30,7 +30,7 @@ emoji_model = faces_model.G(in_channels=864)
 emoji_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
 
 simpson_model = faces_model.G(in_channels=864)
-simpson_model.load_state_dict(torch.load('./models/emoji_g_cpu.pt'))
+simpson_model.load_state_dict(torch.load('./models/simpson_g_cpu.pt'))
 
 
 class ZeroPadBottom(object):
@@ -59,7 +59,7 @@ def predict_cartoon(image):
     # plt.imshow(np.transpose(image, (1, 2, 0)))
     image = toTensor(toPIL(image))
     image = image.unsqueeze(0)
-    image = Variable(image.float().cuda())
+    image = Variable(image.float())
     image = pad112(image)
     # image.size()
     s_f = cartoon_f_model(image)
